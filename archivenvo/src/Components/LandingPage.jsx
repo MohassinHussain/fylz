@@ -1,9 +1,19 @@
 import React, { useEffect, useState } from "react";
+import axios from "axios";
 
 export default function LandingPage() {
   const [data, setData] = useState();
   const [secretcode, setSecretcode] = useState("");
+  const [encodedCode, setEncodedCode] = useState("");
   const [b64Strings, setb64Strings] = useState([]);
+  const [fileUploaded, setFileUploaded] = useState(false);
+  const [fileNames, setFilenames] = useState();
+
+  const [sharedCode, setSharedCode] = useState("");
+  const [submittedSharedCode, setSubmittedSharedCode] = useState(false);
+
+  const [email, setEmail] = useState("");
+  const [query, setQuery] = useState("");
 
   function b64Code() {
     let result = "";
@@ -15,24 +25,88 @@ export default function LandingPage() {
     return result;
   }
 
-  const uploadClicked = () => {
+  const [senderCode, setSenderCode] = useState("");
+
+  const uploadClicked = async () => {
+    //dont remove
+    // for (let i = 0; i < 2; i++) {
+    //     console.log(b64Strings[i]);
+    // }
+
     if (secretcode === "") {
       alert("Please provide code and upload");
     } else {
-      console.log(secretcode + b64Code() + "%*&" + secretcode);
+      //   console.log(secretcode + b64Code() + "%*&" + secretcode);
+      const test =
+        secretcode.split(" ") + b64Code() + "%*&" + secretcode.split(" ");
+      setEncodedCode(test);
+      setSenderCode(test);
+      try {
+        const response = await axios.post(
+          "http://localhost:5000/file-uploaded",
+          { b64Strings, test }
+        );
+        console.log("Done uploaded", response.data);
+      } catch (e) {
+        console.log(e);
+      }
+      setFileUploaded(true);
+      setData(null);
+      setFilenames(null);
       setSecretcode("");
     }
   };
 
-const[fileNames, setFilenames] = useState()
+  const [receiveState, setReceiveState] = useState(false);
+  const receiveClicked = () => {
+    setReceiveState(true);
+  };
+
+  const [receivedData, setReceivedData] = useState([]);
+
+  useEffect(() => {}, []);
+
+  const getClicked = () => {
+  
+    axios
+      .get("http://localhost:5000/file-receive")
+      .then((files) => setReceivedData(files.data))
+      // .then((files) => console.log(files.data))
+      .catch((e) => console.log(e));
+  };
+  const submitCodeClicked = async () => {
+
+    if(sharedCode === "") {
+        alert("Secretcode missing")
+    }
+    else {
+      setSubmittedSharedCode(true);
+      try {
+        const response = await axios.post("http://localhost:5000/receiver-code", {
+          sharedCode,
+        });
+        console.log(response.data);
+      } catch (e) {
+        console.log(e);
+      }
+    
+    }
+    
+
+    // console.log(sharedCode + " " + senderCode);
+    // if(sharedCode === senderCode) {
+    //     console.log("SAME")
+    // }
+  };
+
   function handleFileSelection(e) {
     const files = e.target.files;
     setData(files);
-    let filenamesArray= []
-    for(let i = 0;i<files.length;i++){
-        filenamesArray.push(e.target.files[i].name)
+    let filenamesArray = [];
+    for (let i = 0; i < files.length; i++) {
+      filenamesArray.push(e.target.files[i].name);
     }
-    setFilenames(filenamesArray)
+    setFilenames(filenamesArray);
 
     const base64Promises = Array.from(files).map((file) => {
       return new Promise((resolve, reject) => {
@@ -53,6 +127,8 @@ const[fileNames, setFilenames] = useState()
       );
   }
 
+  function onCopy() {}
+
   // function toB64(data) {
 
   // }
@@ -69,6 +145,26 @@ const[fileNames, setFilenames] = useState()
   //     // previews = temp;
   // }, [data])
 
+  const submittedQuery = async (e) => {
+    e.preventDefault();
+    if (email !== "" && query !== "" && email.length > 5 && query.length > 2) {
+      console.log(email);
+      setEmail("");
+      setQuery("");
+      try {
+        const response = await axios.post("http://localhost:5000/user-query", {
+          email,
+          query,
+        });
+        console.log(response.data);
+      } catch (e) {
+        console.log(e);
+      }
+    } else {
+      alert("Fields cant be empty for submission, please fill properly!");
+    }
+  };
+
   return (
     <div className="grid mt-16 items-center justify-center mx-10 md:mx-48">
       <div className="bg-gradient-to-b from-slate-400 to-blue-200 font-bold rounded-t p-4">
@@ -76,12 +172,17 @@ const[fileNames, setFilenames] = useState()
       </div>
 
       <div className="grid items-center justify-center bg-gradient-to-b from-slate-200 to-blue-700 p-6 rounded-b">
-        { fileNames && <h1 className="text-2xl font-semibold">Selected files</h1>}
-        {fileNames && fileNames.map((file, index)=>{
-            return (<div className="" key={index}>
-                   <li>{file}</li> 
-            </div>)
-        })}
+        {fileNames && (
+          <h1 className="text-2xl font-semibold">Selected files</h1>
+        )}
+        {fileNames &&
+          fileNames.map((file, index) => {
+            return (
+              <div className="" key={index}>
+                <li>{file}</li>
+              </div>
+            );
+          })}
         {data && (
           <div className="bg-slate-200 text-black font-semibold p-2  rounded mt-3 hover:bg-blue-200 transition hover:text-black shadow-2xl drop-shadow-2xl">
             <input
@@ -101,7 +202,7 @@ const[fileNames, setFilenames] = useState()
           >
             Upload
           </button>
-        ) : (
+        ) : !encodedCode ? (
           <input
             type="file"
             // value={data}
@@ -110,25 +211,73 @@ const[fileNames, setFilenames] = useState()
             onChange={handleFileSelection}
             className="font-semibold bg-slate-300 mt-5 mb-8 p-4 rounded  hover:bg-blue-400 transition shadow-2xl drop-shadow-2xl"
           />
+        ) : (
+          ""
         )}
-        {/* {
-            b64Strings && b64Strings.map((pic, i) => {
-                return <img key={i} src={pic} alt="" />
-            })
-        } */}
-        {/* <img src={b64Strings} alt="" /> */}
+        {fileUploaded && (
+          <div className="grid md:flex md:mx-0">
+            <h1 className="text-white text-2xl mb-4">
+              Share this code: <b>{encodedCode}</b>
+            </h1>
+            <button
+              onClick={onCopy}
+              className="bg-slate-400 p-2 mx-36 md:mx-10 md:p-2 text-2xl text-white mb-4 rounded hover:bg-black transition"
+            >
+              Copy
+            </button>
+          </div>
+        )}
+
+        {/* dont remove <img src={b64Strings} alt="" /> */}
         {/* { previews &&
             previews.map((pic) => {
                 return <img src={pic} alt="" />
             })
         } */}
         {/* <img src={previews} alt="" /> */}
-        <button className="bg-slate-500 text-white font-semibold p-4 rounded text-2xl hover:bg-blue-200 transition hover:text-neutral-800 shadow-2xl drop-shadow-2xl">
-          Receive
-        </button>
+        {receiveState ? (
+          <div>
+           {!submittedSharedCode && <input
+              type="text"
+              name="sharedCode"
+              value={sharedCode}
+              onChange={(e) => setSharedCode(e.target.value)}
+              placeholder="Enter secret code"
+              className="h-10 w-full text-2xl"
+            />}
+            {!submittedSharedCode && (
+              <button
+                onClick={submitCodeClicked}
+                className="bg-slate-500 text-white font-semibold ml-36 p-4 rounded text-2xl hover:bg-blue-200 transition hover:text-neutral-800 shadow-2xl drop-shadow-2xl"
+              >
+                SubmitCode
+              </button>
+            )}
+            {submittedSharedCode && (
+              <button
+                onClick={getClicked}
+                className="bg-slate-500 text-white font-semibold ml-36 p-4 rounded text-2xl hover:bg-blue-200 transition hover:text-neutral-800 shadow-2xl drop-shadow-2xl"
+              >
+                Get
+              </button>
+            )}
+          </div>
+        ) : (
+          <button
+            onClick={receiveClicked}
+            className="bg-slate-500 text-white font-semibold p-4 rounded text-2xl hover:bg-blue-200 transition hover:text-neutral-800 shadow-2xl drop-shadow-2xl"
+          >
+            Receive
+          </button>
+        )}
+        {receivedData.map((d, i) => {
+          return <div key={i}  className="bg-slate-300 rounded p-3" ><img className="w-28"  src={d} /></div>
+        })}
       </div>
       <div className="rules terms grid text-white mt-12">
+        
         <h1 className="mb-10 text-4xl font-semibold">Terms and Conditions</h1>
+        
         <h2 className="text-2xl font-bold">1. Introduction</h2>
         <p>
           Welcome to our file-sharing platform. By accessing or using our
@@ -186,13 +335,23 @@ const[fileNames, setFilenames] = useState()
           name="email"
           className="mt-3 p-1 rounded md:w-60"
           placeholder="Your email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
         />
         <textarea
           type="text"
           name="query"
           className="mt-3 p-1 rounded md:w-60 resize-none"
           placeholder="Query.."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
         />
+        <button
+          onClick={submittedQuery}
+          className="bg-red-300 mt-2 rounded active:text-white active:bg-green-600 hover:bg-green-600 hover:text-white md:w-20"
+        >
+          Submit
+        </button>
         <h1 className="font-semibold mt-4 text-2xl">For more information: </h1>
         <h2 className="text-2xl">archivenvo@gmail.com</h2>
       </div>
