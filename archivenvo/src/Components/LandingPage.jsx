@@ -8,7 +8,7 @@ export default function LandingPage() {
   const [b64Strings, setb64Strings] = useState([]);
   const [fileUploaded, setFileUploaded] = useState(false);
   const [fileNames, setFilenames] = useState();
-
+  
   const [sharedCode, setSharedCode] = useState("");
   const [submittedSharedCode, setSubmittedSharedCode] = useState(false);
 
@@ -27,7 +27,10 @@ export default function LandingPage() {
 
   const [senderCode, setSenderCode] = useState("");
 
+  const [uploading, setUploading] = useState(false);
+
   const uploadClicked = async () => {
+    setUploading(true);
     //dont remove
     // for (let i = 0; i < 2; i++) {
     //     console.log(b64Strings[i]);
@@ -45,7 +48,9 @@ export default function LandingPage() {
         const response = await axios.post(
           "https://archivenvo.onrender.com/file-uploaded",
           { b64Strings, test }
+      
         );
+        setUploading(false);
         console.log("Done uploaded", response.data);
       } catch (e) {
         console.log(e);
@@ -63,7 +68,7 @@ export default function LandingPage() {
   };
 
   const [loading, setLoading] = useState(false);
-
+  
   const [receivedData, setReceivedData] = useState([]);
   useEffect(() => {}, []);
 
@@ -230,7 +235,7 @@ export default function LandingPage() {
             className="font-semibold bg-slate-300 mt-5 mb-8 p-4 rounded text-2xl hover:bg-blue-400 transition shadow-2xl drop-shadow-2xl	"
             onClick={uploadClicked}
           >
-            Upload
+            {uploading ? : "Uploading..." : "Upload";}
           </button>
         ) : !encodedCode ? (
           !receiveState && (
