@@ -311,7 +311,7 @@ export default function LandingPage() {
             <div
             onClick={clickedOnImage}
               key={i}
-              className="bg-slate-300 w-20 justify-center rounded p-3"
+              className="bg-slate-300 w-20 mt-2 justify-center rounded p-3"
             >
               <img className="w-28" src={d} />
             </div>
