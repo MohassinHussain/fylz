@@ -59,41 +59,44 @@ export default function LandingPage() {
 
   const [receiveState, setReceiveState] = useState(false);
   const receiveClicked = () => {
-  
     setReceiveState(true);
   };
 
-  const [receivedData, setReceivedData] = useState([]);
+  const [loading, setLoading] = useState(false);
 
+  const [receivedData, setReceivedData] = useState([]);
   useEffect(() => {}, []);
 
   const getClicked = () => {
+
+          setLoading(true);
+ 
     // alert("CLicked")
-  // console.log("CLIKCED");
+    // console.log("CLIKCED");
     axios
       .get("https://archivenvo.onrender.com/file-receive")
-      .then((files) => setReceivedData(files.data))
+      .then((files) =>{ setReceivedData(files.data) 
+        setLoading(false)})
       // .then((files) => console.log(files.data))
       .catch((e) => console.log(e));
   };
   const submitCodeClicked = async () => {
-
-    if(sharedCode === "") {
-        alert("Secretcode missing")
-    }
-    else {
+    if (sharedCode === "") {
+      alert("Secretcode missing");
+    } else {
       setSubmittedSharedCode(true);
       try {
-        const response = await axios.post("https://archivenvo.onrender.com/receiver-code", {
-          sharedCode,
-        });
+        const response = await axios.post(
+          "https://archivenvo.onrender.com/receiver-code",
+          {
+            sharedCode,
+          }
+        );
         console.log(response.data);
       } catch (e) {
         console.log(e);
       }
-    
     }
-    
 
     // console.log(sharedCode + " " + senderCode);
     // if(sharedCode === senderCode) {
@@ -133,16 +136,21 @@ export default function LandingPage() {
   function onCopy() {
     // let copied = senderCode
     if (encodedCode) {
-      navigator.clipboard.writeText(encodedCode)
+      navigator.clipboard
+        .writeText(encodedCode)
         .then(() => {
-          alert('Text copied to clipboard');
+          alert("Text copied to clipboard");
         })
-        .catch(err => {
-          console.error('Failed to copy text: ', err);
+        .catch((err) => {
+          console.error("Failed to copy text: ", err);
         });
     } else {
-      console.error('encodedCode is empty');
+      console.error("encodedCode is empty");
     }
+  }
+
+  const clickedOnImage = () => {
+  
   }
 
   // function toB64(data) {
@@ -161,6 +169,8 @@ export default function LandingPage() {
   //     // previews = temp;
   // }, [data])
 
+
+
   const submittedQuery = async (e) => {
     e.preventDefault();
     if (email !== "" && query !== "" && email.length > 5 && query.length > 2) {
@@ -168,10 +178,13 @@ export default function LandingPage() {
       setEmail("");
       setQuery("");
       try {
-        const response = await axios.post("https://archivenvo.onrender.com/user-query", {
-          email,
-          query,
-        });
+        const response = await axios.post(
+          "https://archivenvo.onrender.com/user-query",
+          {
+            email,
+            query,
+          }
+        );
         console.log(response.data);
       } catch (e) {
         console.log(e);
@@ -203,7 +216,7 @@ export default function LandingPage() {
           <div className="bg-slate-200 text-black font-semibold p-2  rounded mt-3 hover:bg-blue-200 transition hover:text-black shadow-2xl drop-shadow-2xl">
             <input
               type="text"
-            ref={codeRef}
+              ref={codeRef}
               name="secretcode"
               value={secretcode}
               onChange={(e) => setSecretcode(e.target.value)}
@@ -220,21 +233,22 @@ export default function LandingPage() {
             Upload
           </button>
         ) : !encodedCode ? (
-          !receiveState && <input
-            type="file"
-            // value={data}
-            multiple={true}
-            name="file"
-            onChange={handleFileSelection}
-            className="font-semibold bg-slate-300 mt-5 mb-8 p-4 rounded  hover:bg-blue-400 transition shadow-2xl drop-shadow-2xl"
-          />
+          !receiveState && (
+            <input
+              type="file"
+              // value={data}
+              multiple={true}
+              name="file"
+              onChange={handleFileSelection}
+              className="font-semibold bg-slate-300 mt-5 mb-8 p-4 rounded  hover:bg-blue-400 transition shadow-2xl drop-shadow-2xl"
+            />
+          )
         ) : (
           ""
         )}
-        {fileUploaded  && (
-          
-         !receiveState && <div className="grid md:flex md:mx-0">
-           <h1 className="text-gray-800 text-2xl mb-4">
+        {fileUploaded && !receiveState && (
+          <div className="grid md:flex md:mx-0">
+            <h1 className="text-gray-800 text-2xl mb-4">
               Share this code: <b>{encodedCode}</b>
             </h1>
             <button
@@ -242,7 +256,7 @@ export default function LandingPage() {
               className="bg-slate-400 p-2 mx-36 md:mx-10 md:p-2 text-2xl text-white mb-4 rounded hover:bg-black transition"
             >
               Copy
-            </button> 
+            </button>
           </div>
         )}
 
@@ -255,18 +269,20 @@ export default function LandingPage() {
         {/* <img src={previews} alt="" /> */}
         {receiveState ? (
           <div>
-           {!submittedSharedCode && <input
-              type="text"
-              name="sharedCode"
-              value={sharedCode}
-              onChange={(e) => setSharedCode(e.target.value)}
-              placeholder="Enter secret code"
-              className="h-10 w-full text-2xl"
-            />}
+            {!submittedSharedCode && (
+              <input
+                type="text"
+                name="sharedCode"
+                value={sharedCode}
+                onChange={(e) => setSharedCode(e.target.value)}
+                placeholder="Enter secret code"
+                className="h-10 w-full text-2xl"
+              />
+            )}
             {!submittedSharedCode && (
               <button
                 onClick={submitCodeClicked}
-                className="bg-slate-500 text-white font-semibold ml-36 p-4 rounded text-2xl hover:bg-blue-200 transition hover:text-neutral-800 shadow-2xl drop-shadow-2xl"
+                className="bg-slate-500 text-white font-semibold mt-2 p-4 rounded text-2xl hover:bg-blue-200 transition hover:text-neutral-800 shadow-2xl drop-shadow-2xl"
               >
                 SubmitCode
               </button>
@@ -274,28 +290,37 @@ export default function LandingPage() {
             {submittedSharedCode && (
               <button
                 onClick={getClicked}
-                className="bg-slate-500 text-white font-semibold ml-36 p-4 rounded text-2xl hover:bg-blue-200 transition hover:text-neutral-800 shadow-2xl drop-shadow-2xl"
+                className="bg-slate-500 text-white font-semibold p-4 rounded text-2xl hover:bg-blue-200 transition hover:text-neutral-800 shadow-2xl drop-shadow-2xl"
               >
-                Get
+                {loading ? "Loading..." : "Get"}
               </button>
             )}
           </div>
         ) : (
-          !data && (<button
-            onClick={receiveClicked}
-            className="bg-slate-500 text-white font-semibold p-4 rounded text-2xl hover:bg-blue-200 transition hover:text-neutral-800 shadow-2xl drop-shadow-2xl"
-          >
-            Receive
-          </button>)
+          !data && (
+            <button
+              onClick={receiveClicked}
+              className="bg-slate-500 text-white font-semibold p-4 rounded text-2xl hover:bg-blue-200 transition hover:text-neutral-800 shadow-2xl drop-shadow-2xl"
+            >
+              Receive
+            </button>
+          )
         )}
         {receivedData.map((d, i) => {
-          return <div key={i}  className="bg-slate-300 w-20 justify-center rounded p-3" ><img className="w-28"  src={d} /></div>
+          return (
+            <div
+            onClick={clickedOnImage}
+              key={i}
+              className="bg-slate-300 w-20 justify-center rounded p-3"
+            >
+              <img className="w-28" src={d} />
+            </div>
+          );
         })}
       </div>
       <div className="rules terms grid text-white mt-12">
-        
         <h1 className="mb-10 text-4xl font-semibold">Terms and Conditions</h1>
-        
+
         <h2 className="text-2xl font-bold">1. Introduction</h2>
         <p>
           Welcome to our file-sharing platform. By accessing or using our
