@@ -170,7 +170,7 @@ export default function LandingPage() {
   return (
     <div className="grid mt-16 items-center justify-center mx-10 md:mx-48">
       <div className="bg-gradient-to-b from-slate-400 to-blue-200 font-bold rounded-t p-4">
-        <h1 className="text-4xl text-center">Welcome to ArchivEnvo</h1>
+        <h1 className="text-4xl text-center">Welcome to ArchivEnvo!</h1>
       </div>
 
       <div className="grid items-center justify-center bg-gradient-to-b from-slate-200 to-blue-700 p-6 rounded-b">
