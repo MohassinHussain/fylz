@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 
 export default function LandingPage() {
@@ -128,8 +128,22 @@ export default function LandingPage() {
         console.error("Error converting files to base64:", error)
       );
   }
+  const codeRef = useRef(null);
 
-  function onCopy() {}
+  function onCopy() {
+    // let copied = senderCode
+    if (encodedCode) {
+      navigator.clipboard.writeText(encodedCode)
+        .then(() => {
+          alert('Text copied to clipboard');
+        })
+        .catch(err => {
+          console.error('Failed to copy text: ', err);
+        });
+    } else {
+      console.error('encodedCode is empty');
+    }
+  }
 
   // function toB64(data) {
 
@@ -189,6 +203,7 @@ export default function LandingPage() {
           <div className="bg-slate-200 text-black font-semibold p-2  rounded mt-3 hover:bg-blue-200 transition hover:text-black shadow-2xl drop-shadow-2xl">
             <input
               type="text"
+            ref={codeRef}
               name="secretcode"
               value={secretcode}
               onChange={(e) => setSecretcode(e.target.value)}
@@ -205,7 +220,7 @@ export default function LandingPage() {
             Upload
           </button>
         ) : !encodedCode ? (
-          <input
+          !receiveState && <input
             type="file"
             // value={data}
             multiple={true}
@@ -216,9 +231,10 @@ export default function LandingPage() {
         ) : (
           ""
         )}
-        {fileUploaded && (
-          <div className="grid md:flex md:mx-0">
-            <h1 className="text-white text-2xl mb-4">
+        {fileUploaded  && (
+          
+         !receiveState && <div className="grid md:flex md:mx-0">
+           <h1 className="text-gray-800 text-2xl mb-4">
               Share this code: <b>{encodedCode}</b>
             </h1>
             <button
@@ -226,7 +242,7 @@ export default function LandingPage() {
               className="bg-slate-400 p-2 mx-36 md:mx-10 md:p-2 text-2xl text-white mb-4 rounded hover:bg-black transition"
             >
               Copy
-            </button>
+            </button> 
           </div>
         )}
 
@@ -265,12 +281,12 @@ export default function LandingPage() {
             )}
           </div>
         ) : (
-          <button
+          !data && (<button
             onClick={receiveClicked}
             className="bg-slate-500 text-white font-semibold p-4 rounded text-2xl hover:bg-blue-200 transition hover:text-neutral-800 shadow-2xl drop-shadow-2xl"
           >
             Receive
-          </button>
+          </button>)
         )}
         {receivedData.map((d, i) => {
           return <div key={i}  className="bg-slate-300 w-20 justify-center rounded p-3" ><img className="w-28"  src={d} /></div>
