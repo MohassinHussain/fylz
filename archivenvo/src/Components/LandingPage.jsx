@@ -235,7 +235,7 @@ export default function LandingPage() {
             className="font-semibold bg-slate-300 mt-5 mb-8 p-4 rounded text-2xl hover:bg-blue-400 transition shadow-2xl drop-shadow-2xl	"
             onClick={uploadClicked}
           >
-            {uploading ? : "Uploading..." : "Upload";}
+            {uploading ? "Uploading..." : "Upload"}
           </button>
         ) : !encodedCode ? (
           !receiveState && (
