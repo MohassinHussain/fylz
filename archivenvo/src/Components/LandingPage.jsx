@@ -43,7 +43,7 @@ export default function LandingPage() {
       setSenderCode(test);
       try {
         const response = await axios.post(
-          "http://localhost:5000/file-uploaded",
+          "https://archivenvo.onrender.com/file-uploaded",
           { b64Strings, test }
         );
         console.log("Done uploaded", response.data);
@@ -59,6 +59,7 @@ export default function LandingPage() {
 
   const [receiveState, setReceiveState] = useState(false);
   const receiveClicked = () => {
+  
     setReceiveState(true);
   };
 
@@ -67,9 +68,10 @@ export default function LandingPage() {
   useEffect(() => {}, []);
 
   const getClicked = () => {
-  
+    // alert("CLicked")
+  // console.log("CLIKCED");
     axios
-      .get("http://localhost:5000/file-receive")
+      .get("https://archivenvo.onrender.com/file-receive")
       .then((files) => setReceivedData(files.data))
       // .then((files) => console.log(files.data))
       .catch((e) => console.log(e));
@@ -82,7 +84,7 @@ export default function LandingPage() {
     else {
       setSubmittedSharedCode(true);
       try {
-        const response = await axios.post("http://localhost:5000/receiver-code", {
+        const response = await axios.post("https://archivenvo.onrender.com/receiver-code", {
           sharedCode,
         });
         console.log(response.data);
@@ -152,7 +154,7 @@ export default function LandingPage() {
       setEmail("");
       setQuery("");
       try {
-        const response = await axios.post("http://localhost:5000/user-query", {
+        const response = await axios.post("https://archivenvo.onrender.com/user-query", {
           email,
           query,
         });
@@ -271,7 +273,7 @@ export default function LandingPage() {
           </button>
         )}
         {receivedData.map((d, i) => {
-          return <div key={i}  className="bg-slate-300 rounded p-3" ><img className="w-28"  src={d} /></div>
+          return <div key={i}  className="bg-slate-300 w-20 justify-center rounded p-3" ><img className="w-28"  src={d} /></div>
         })}
       </div>
       <div className="rules terms grid text-white mt-12">
