@@ -2,322 +2,169 @@ import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 
 export default function LandingPage() {
-  const [data, setData] = useState();
-  const [secretcode, setSecretcode] = useState("");
-  const [encodedCode, setEncodedCode] = useState("");
-  const [b64Strings, setb64Strings] = useState([]);
-  const [fileUploaded, setFileUploaded] = useState(false);
-  const [fileNames, setFilenames] = useState();
+  //activators
+  const [receiveClicked, setReceiveClicked] = useState(false);
+  const [uploadClicked, setUploadClicked] = useState(false);
 
-  const [sharedCode, setSharedCode] = useState("");
-  const [submittedSharedCode, setSubmittedSharedCode] = useState(false);
+  //footer
+  const [email, seEmail] = useState("");
+  const [query, seQuery] = useState("");
 
-  const [email, setEmail] = useState("");
-  const [query, setQuery] = useState("");
+  //file
+  const [selectedFile, setSelectedFile] = useState("");
+  const [code, setCode] = useState("");
 
-  function b64Code() {
-    let result = "";
-    let chars =
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnodfpanxksaksncos;s.,sdsj<>?sd/s\\]d[s[s[-w=9*&#*@)";
-    for (let i = 0; i < 6; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return result;
-  }
+  //receive
+  const [receiverCode, setReceiverCode] = useState("");
 
-  const [senderCode, setSenderCode] = useState("");
-
-  const uploadClicked = async () => {
-    //dont remove
-    // for (let i = 0; i < 2; i++) {
-    //     console.log(b64Strings[i]);
-    // }
-
-    if (secretcode === "") {
-      alert("Please provide code and upload");
-    } else {
-      //   console.log(secretcode + b64Code() + "%*&" + secretcode);
-      const test =
-        secretcode.split(" ") + b64Code() + "%*&" + secretcode.split(" ");
-      setEncodedCode(test);
-      setSenderCode(test);
-      try {
-        const response = await axios.post(
-          "https://archivenvo.onrender.com/file-uploaded",
-          { b64Strings, test }
-        );
-        console.log("Done uploaded", response.data);
-      } catch (e) {
-        console.log(e);
-      }
-      setFileUploaded(true);
-      setData(null);
-      setFilenames(null);
-      setSecretcode("");
-    }
-  };
-
-  const [receiveState, setReceiveState] = useState(false);
-  const receiveClicked = () => {
-    setReceiveState(true);
-  };
-
-  const [loading, setLoading] = useState(false);
-
-  const [receivedData, setReceivedData] = useState([]);
-  useEffect(() => {}, []);
-
-  const getClicked = () => {
-
-          setLoading(true);
- 
-    // alert("CLicked")
-    // console.log("CLIKCED");
-    axios
-      .get("https://archivenvo.onrender.com/file-receive")
-      .then((files) =>{ setReceivedData(files.data) 
-        setLoading(false)})
-      // .then((files) => console.log(files.data))
-      .catch((e) => console.log(e));
-  };
-  const submitCodeClicked = async () => {
-    if (sharedCode === "") {
-      alert("Secretcode missing");
-    } else {
-      setSubmittedSharedCode(true);
-      try {
-        const response = await axios.post(
-          "https://archivenvo.onrender.com/receiver-code",
-          {
-            sharedCode,
-          }
-        );
-        console.log(response.data);
-      } catch (e) {
-        console.log(e);
-      }
-    }
-
-    // console.log(sharedCode + " " + senderCode);
-    // if(sharedCode === senderCode) {
-    //     console.log("SAME")
-    // }
-  };
-
-  function handleFileSelection(e) {
-    const files = e.target.files;
-    setData(files);
-    let filenamesArray = [];
-    for (let i = 0; i < files.length; i++) {
-      filenamesArray.push(e.target.files[i].name);
-    }
-    setFilenames(filenamesArray);
-
-    const base64Promises = Array.from(files).map((file) => {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = (error) => reject(error);
-      });
-    });
-
-    Promise.all(base64Promises)
-      .then((base64Strings) => {
-        console.log(base64Strings); // Log all base64 strings
-        setb64Strings(base64Strings); // Optionally store base64 strings for preview
-      })
-      .catch((error) =>
-        console.error("Error converting files to base64:", error)
-      );
-  }
-  const codeRef = useRef(null);
-
-  function onCopy() {
-    // let copied = senderCode
-    if (encodedCode) {
-      navigator.clipboard
-        .writeText(encodedCode)
-        .then(() => {
-          alert("Text copied to clipboard");
-        })
-        .catch((err) => {
-          console.error("Failed to copy text: ", err);
-        });
-    } else {
-      console.error("encodedCode is empty");
-    }
-  }
-
-  const clickedOnImage = () => {
-  
-  }
-
-  // function toB64(data) {
-
-  // }
-
-  // useEffect(()=>{
-  //     if(!data) return
-  //     let temp = []
-  //     for(let i = 0; i< data.length; i++){
-  //         temp.push(URL.createObjectURL(data[i]))
-  //     }
-  //     const urls = temp;
-  //     setPreviews(urls)
-  //     // temp = URL.createObjectURL(data)
-  //     // previews = temp;
-  // }, [data])
-
-
-
-  const submittedQuery = async (e) => {
+  //upload clicked
+  const submitFilesCode = async (e) => {
     e.preventDefault();
-    if (email !== "" && query !== "" && email.length > 5 && query.length > 2) {
-      console.log(email);
-      setEmail("");
-      setQuery("");
+    if (code === "" || code === " ") {
+      alert("Enter code");
+    } else {
+      // console.log(code, selectedFile);
+      const formData = new FormData();
+      formData.append("code", code);
+      formData.append("file", selectedFile);
+
       try {
-        const response = await axios.post(
-          "https://archivenvo.onrender.com/user-query",
+        const result = await axios.post(
+          "http://localhost:5000/file-upload",
+          formData,
           {
-            email,
-            query,
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
           }
         );
-        console.log(response.data);
-      } catch (e) {
-        console.log(e);
+        //
+        console.log(result.data);
+        alert("Uploaded");
+        setCode("");
+        setSelectedFile("");
+      } catch (error) {
+        console.log("ERROR NEAR UPLOADING", error);
       }
-    } else {
-      alert("Fields cant be empty for submission, please fill properly!");
     }
   };
+
+  const [received, setReceived] = useState(null);
+
+  const submittedReceiveCode = async (e) => {
+    e.preventDefault();
+    // console.log(receiverCode);
+
+    try {
+      const response = await axios.post("http://localhost:5000/file-get", {
+        receiverCode,
+      });
+      console.log(response.data.data);
+      
+     
+      setReceived(response.data.data)
+      
+      
+    } catch (error) {
+      console.log("ERROR WHILE SEMDING RECIVE CODE");
+    }
+  };
+
+  function submittedQuery() {
+    alert("Submitted");
+  }
+
+
+ function getFile() {
+  if(received)
+  window.open(`http://localhost:5000/my-files/${received.fileName}`, "_blank" ,"noreferrer")
+ }
+
+ 
 
   return (
     <div className="grid mt-16 items-center justify-center mx-10 md:mx-48">
       <div className="bg-gradient-to-b from-slate-400 to-blue-200 font-bold rounded-t p-4">
         <h1 className="text-4xl text-center">Welcome to ArchivEnvo!</h1>
       </div>
-
-      <div className="grid items-center justify-center bg-gradient-to-b from-slate-200 to-blue-700 p-6 rounded-b">
-        {fileNames && (
-          <h1 className="text-2xl font-semibold">Selected files</h1>
-        )}
-        {fileNames &&
-          fileNames.map((file, index) => {
-            return (
-              <div className="" key={index}>
-                <li>{file}</li>
-              </div>
-            );
-          })}
-        {data && (
-          <div className="bg-slate-200 text-black font-semibold p-2  rounded mt-3 hover:bg-blue-200 transition hover:text-black shadow-2xl drop-shadow-2xl">
-            <input
-              type="text"
-              ref={codeRef}
-              name="secretcode"
-              value={secretcode}
-              onChange={(e) => setSecretcode(e.target.value)}
-              placeholder="Enter secret code"
-              className="h-10 w-full text-2xl"
-            />
-          </div>
-        )}
-        {data ? (
-          <button
-            className="font-semibold bg-slate-300 mt-5 mb-8 p-4 rounded text-2xl hover:bg-blue-400 transition shadow-2xl drop-shadow-2xl	"
-            onClick={uploadClicked}
-          >
-            Upload
-          </button>
-        ) : !encodedCode ? (
-          !receiveState && (
+      <div className="bg-blue-400 rounded-b p-10 grid">
+        {/* <button className="previous bg-red-400 m-1 w-4 h-4 rounded-full" /> */}
+        {uploadClicked ? (
+          <form action="">
             <input
               type="file"
-              // value={data}
-              multiple={true}
+              onChange={(e) => setSelectedFile(e.target.files[0])}
               name="file"
-              onChange={handleFileSelection}
-              className="font-semibold bg-slate-300 mt-5 mb-8 p-4 rounded  hover:bg-blue-400 transition shadow-2xl drop-shadow-2xl"
             />
-          )
-        ) : (
-          ""
-        )}
-        {fileUploaded && !receiveState && (
-          <div className="grid md:flex md:mx-0">
-            <h1 className="text-gray-800 text-2xl mb-4">
-              Share this code: <b>{encodedCode}</b>
-            </h1>
+            <input
+              type="text"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              className="mt-5 rounded p-2"
+              placeholder="Enter code"
+            />
+
+            {/* uploadFilesbutton */}
             <button
-              onClick={onCopy}
-              className="bg-slate-400 p-2 mx-36 md:mx-10 md:p-2 text-2xl text-white mb-4 rounded hover:bg-black transition"
+              type="submit"
+              onClick={submitFilesCode}
+              className="mt-5 bg-red-200 rounded ml-5 p-2 w-80 hover:bg-purple-300 hover:font-bold"
             >
-              Copy
+              Upload files
             </button>
-          </div>
+          </form>
+        ) : (
+          !receiveClicked && (
+            // upload button
+            <button
+              onClick={() => setUploadClicked(true)}
+              className="mt-5 bg-red-200 rounded ml-5 p-2 w-80 hover:bg-purple-300 hover:font-bold"
+            >
+              Upload
+            </button>
+          )
         )}
 
-        {/* dont remove <img src={b64Strings} alt="" /> */}
-        {/* { previews &&
-            previews.map((pic) => {
-                return <img src={pic} alt="" />
-            })
-        } */}
-        {/* <img src={previews} alt="" /> */}
-        {receiveState ? (
-          <div>
-            {!submittedSharedCode && (
-              <input
-                type="text"
-                name="sharedCode"
-                value={sharedCode}
-                onChange={(e) => setSharedCode(e.target.value)}
-                placeholder="Enter secret code"
-                className="h-10 w-full text-2xl"
-              />
-            )}
-            {!submittedSharedCode && (
-              <button
-                onClick={submitCodeClicked}
-                className="bg-slate-500 text-white font-semibold mt-2 p-4 rounded text-2xl hover:bg-blue-200 transition hover:text-neutral-800 shadow-2xl drop-shadow-2xl"
-              >
-                SubmitCode
-              </button>
-            )}
-            {submittedSharedCode && (
-              <button
-                onClick={getClicked}
-                className="bg-slate-500 text-white font-semibold p-4 rounded text-2xl hover:bg-blue-200 transition hover:text-neutral-800 shadow-2xl drop-shadow-2xl"
-              >
-                {loading ? "Loading..." : "Get"}
-              </button>
-            )}
-          </div>
-        ) : (
-          !data && (
+        {/* //receive form */}
+
+        {receiveClicked ? (
+          <form action="">
+            <input
+              type="text"
+              className="mt-5 rounded p-2"
+              value={receiverCode}
+              placeholder="Enter res code"
+              onChange={(e) => setReceiverCode(e.target.value)}
+            />
             <button
-              onClick={receiveClicked}
-              className="bg-slate-500 text-white font-semibold p-4 rounded text-2xl hover:bg-blue-200 transition hover:text-neutral-800 shadow-2xl drop-shadow-2xl"
+              type="submit"
+              onClick={submittedReceiveCode}
+              className="mt-5 bg-red-200 rounded ml-5 p-2 w-80 hover:bg-purple-300 hover:font-bold"
+            >
+              Submit
+            </button>
+          </form>
+        ) : (
+          !uploadClicked && (
+            <button
+              onClick={() => setReceiveClicked(true)}
+              className="mt-5 bg-red-200 rounded ml-5 p-2 w-80 hover:bg-purple-300 hover:font-bold"
             >
               Receive
             </button>
           )
         )}
-        {receivedData.map((d, i) => {
-          return (
-            <div
-            onClick={clickedOnImage}
-              key={i}
-              className="bg-slate-300 w-20 justify-center rounded p-3"
-            >
-              <img className="w-28" src={d} />
-            </div>
-          );
-        })}
+        {(uploadClicked || receiveClicked) && (!uploadClicked) && <button
+          onClick={getFile}
+          className="mt-5 bg-red-200 rounded ml-5 p-2 w-80 hover:bg-purple-300 hover:font-bold"
+        >
+          GET
+        </button>} 
       </div>
+
+      <h1>{received && received.fileName}</h1>
+         {/* <img className="w-20 h-20" src={received && received.fileName} alt="" />  */}
+         
       <div className="rules terms grid text-white mt-12">
         <h1 className="mb-10 text-4xl font-semibold">Terms and Conditions</h1>
 

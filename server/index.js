@@ -1,16 +1,20 @@
-const express = require('express')
+const express = require("express")
 const mongoose = require('mongoose')
-const cors = require('cors')
-const port = 5000;
+const port = '5000'
+const cors = require('cors');
 const app = express();
-const model = require('./Schemas/UserSchema')
-const fileModel = require('./Schemas/FileSchema')
-app.get('/', (req, res) => {
+const multer  = require('multer')
+const path = require('path')
+const fs = require('fs')
+app.use(cors())
+app.use('/my-files', express.static("my-files"))
+app.use(express.json())
+app.use(express.urlencoded({ extended: false }));
+app.get('/', (req, res)=>{
     res.send("HELLO")
 })
-app.use(express.json())
-app.use(cors())
-app.use(express.urlencoded({ extended: false }));
+
+
 mongoose.connect("mongodb+srv://userme:OhguQudhETIKckYQ@cluster0.hwpdi97.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0").then(() => {
     console.log("Connected");
     app.listen(port, () => {
@@ -19,77 +23,76 @@ mongoose.connect("mongodb+srv://userme:OhguQudhETIKckYQ@cluster0.hwpdi97.mongodb
 
 }).catch(e => console.log(e))
 
-app.post('/user-query', async (req, res) => {
+const fileModel = require('./Schemas/FileSchema');
+const { log } = require("console");
+
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, './my-files')
+    },
+    filename: function (req, file, cb) {
+        const uniqueSuffix = Date.now()
+        cb(null, uniqueSuffix + "-" + file.originalname)    }
+  })
+  
+  const upload = multer({ storage: storage })
+
+app.post('/file-upload', upload.single("file"), async (req, res)=>{
+    const code = req.body.code;
+    checker = code
+    const fileName = req.file.filename;
+    console.log(code, fileName);
+    // res.send("GOT FILE")
     try {
-        const { email, query } = req.body;
-        const user = new model({ email, query })
-        await user.save();
-        // console.log(user);
-
-        res.status(201).json(user);
-
-    }
-    catch (e) {
-        console.log(e);
-        res.status(500).json({ message: "Internal server" })
-    }
-})
-
-
-app.post('/file-uploaded', async (req, res) => {
-    try {
-        const { b64Strings, test } = req.body;
-        // console.log('Request Body:', req.body);
-        console.log(test);
-        if (!Array.isArray(b64Strings)) {
-            return res.status(400).send('Invalid input');
-        }
-        else{
-        console.log('Base64 Strings:', b64Strings);
-        // console.log('Encoded Code:', test);
-        const file = new fileModel({ b64Strings, test })
-        await file.save();
-
-        // res.send("DATA RES")    
-        res.status(201).json(file);
-    }
-    }
-    catch (e) {
-        console.log(e);
-        res.status(500).json({ message: "Internal server" })
-    }
-})
-
-let array = []
-let invalidCode = null
-app.post('/receiver-code', async (req, res)=>{
-    try {
-    const {sharedCode} = req.body;  
-    const ress = fileModel.findOne({test: sharedCode})
-    ress.then(file => {
-        if (file) {
-            // console.log('Document  data:', file.b64Strings);
-            array = file.b64Strings;
-            console.log(array);
-          } else {
+        await fileModel.create({code, fileName});
+        res.send("FILE UPLOADED TO DB")
         
-            // console.log('No matching file found');
-            invalidCode = "No Match"
-            console.log(invalidCode);
-          }
-    })
-    res.json({ message: 'Code received successfully!' });
-    // console.log(ress);
-} catch (e) {``
-    console.log(e);
-}
+        const time = new Date();
+        const uploadTime= time.getMinutes()
+        console.log(uploadTime);
+
+        setTimeout(async() => {
+            const filePath = path.join(__dirname, "my-files", fileName)
+            fs.unlink(filePath, (err)=>{
+                if(err){
+                console.log("Error occured at file deleting from (multer) disk");
+                res.status(500).send('Failed to delete file');
+            }
+            else {
+                console.log(`File deleted CODE: ${code} successfully from disk at ${time.getMinutes()}`);
+            }
+            });
+
+            //deleting from db
+            await fileModel.deleteMany({code})
+            console.log(`Deleted CODE: ${code} from db Also`);
+
+        }, 120000 ); 
+
+    } catch (error) {
+        console.log("ERROR IN SENDING TO DB");
+    }
 })
 
+let resCode = null
 
-app.get('/file-receive', (req, res)=>{
-    res.json(array)  
-    // res.json(invalidCode)
-
-    array = []
+app.post('/file-get', async(req, res)=> {
+    const {receiverCode} = req.body;
+    resCode = receiverCode
+    console.log(receiverCode);
+    try {
+        const document = await fileModel.findOne({ code: receiverCode });
+        if (document) {
+            console.log(document); 
+            res.send({status: "ok", data: document})
+        }
+        else {
+            console.log("no doc");
+            res.send({ status: 404, data: "NO DOC FOUND" })
+        }
+    } catch (error) {
+        console.log(error);
+    }
+    
 })
 
