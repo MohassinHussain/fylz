@@ -30,7 +30,7 @@ export default function LandingPage() {
 
       try {
         const result = await axios.post(
-          "http://localhost:5000/file-upload",
+          "https://archivenvo.onrender.com/file-upload",
           formData,
           {
             headers: {
@@ -58,13 +58,13 @@ export default function LandingPage() {
     // console.log(receiverCode);
 
     try {
-      const response = await axios.post("http://localhost:5000/file-get", {
+      const response = await axios.post("https://archivenvo.onrender.com/file-get", {
         receiverCode,
       });
       const fileName = response.data.data?.fileName;
       
       if (fileName) {
-        setUrl( `http://localhost:5000/my-files/${fileName}`);
+        setUrl( `https://archivenvo.onrender.com/my-files/${fileName}`);
         setReceived(response.data.data);
       } else {
         console.error('No fileName in response data');
@@ -83,8 +83,8 @@ export default function LandingPage() {
 
  function getFile() {
   if(received){
-    setUrl(`http://localhost:5000/my-files/${received.fileName}`)
-    window.open(`http://localhost:5000/my-files/${received.fileName}`, "_blank" ,"noreferrer")
+    setUrl(`https://archivenvo.onrender.com/my-files/${received.fileName}`)
+    window.open(`https://archivenvo.onrender.com/my-files/${received.fileName}`, "_blank" ,"noreferrer")
 }
  }
 
