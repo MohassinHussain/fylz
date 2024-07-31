@@ -48,8 +48,10 @@ export default function LandingPage() {
       }
     }
   };
-
+  
+ 
   const [received, setReceived] = useState(null);
+  const [url, setUrl] = useState("")
 
   const submittedReceiveCode = async (e) => {
     e.preventDefault();
@@ -59,14 +61,18 @@ export default function LandingPage() {
       const response = await axios.post("http://localhost:5000/file-get", {
         receiverCode,
       });
-      console.log(response.data.data);
+      const fileName = response.data.data?.fileName;
       
-     
-      setReceived(response.data.data)
-      
+      if (fileName) {
+        setUrl( `http://localhost:5000/my-files/${fileName}`);
+        setReceived(response.data.data);
+      } else {
+        console.error('No fileName in response data');
+      }
+
       
     } catch (error) {
-      console.log("ERROR WHILE SEMDING RECIVE CODE");
+      console.log("ERROR WHILE SEMDING RECIVE CODE", error);
     }
   };
 
@@ -76,11 +82,33 @@ export default function LandingPage() {
 
 
  function getFile() {
-  if(received)
-  window.open(`http://localhost:5000/my-files/${received.fileName}`, "_blank" ,"noreferrer")
+  if(received){
+    setUrl(`http://localhost:5000/my-files/${received.fileName}`)
+    window.open(`http://localhost:5000/my-files/${received.fileName}`, "_blank" ,"noreferrer")
+}
  }
 
- 
+ function handleDown() {
+  if (url && received) {
+    axios.get(url, { responseType: 'blob' })  // Make sure to use 'blob' response type
+      .then(response => {
+        const blob = new Blob([response.data], { type: response.headers['content-type'] });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = received.fileName || 'downloaded-file'; // Fallback filename
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link); // Clean up the link element
+        URL.revokeObjectURL(link.href); // Release memory
+      })
+      .catch(error => {
+        console.error('Error downloading file:', error);
+      });
+  } else {
+    console.error('URL or received data is not set');
+  }
+}
+
 
   return (
     <div className="grid mt-16 items-center justify-center mx-10 md:mx-48">
@@ -164,7 +192,9 @@ export default function LandingPage() {
 
       <h1>{received && received.fileName}</h1>
          {/* <img className="w-20 h-20" src={received && received.fileName} alt="" />  */}
-         
+        <button onClick={handleDown} className="bg-green-300">DOWNLOAD</button>
+
+
       <div className="rules terms grid text-white mt-12">
         <h1 className="mb-10 text-4xl font-semibold">Terms and Conditions</h1>
 
