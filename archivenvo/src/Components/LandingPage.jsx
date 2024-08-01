@@ -12,18 +12,20 @@ export default function LandingPage() {
   const [submitCodeClicked, setSubmitCodeClicked] = useState(false);
   const [showDownloadButton, setShowDownloadButton] = useState(false);
   const [alerter, setAlerter] = useState("");
-  //footer
-  
 
   //file
   const [selectedFile, setSelectedFile] = useState("");
   const [code, setCode] = useState("");
+  
+  //encoding code
+  const [secretCode, setSecretCode] = useState("")
 
   //receive
   const [receiverCode, setReceiverCode] = useState("");
 //cancel request 
   const cancelTokenSource = useRef(null);
 
+  
 
   //upload clicked
   const submitFilesCode = async (e) => {
@@ -168,18 +170,18 @@ export default function LandingPage() {
         </h1>
       </div>
 
-      <div className="bg-gradient-to-b h-60 mb-32 from-slate-300 to-b md:items-center md:flex md:flex-col rounded-b p-10 grid">
+      <div className="bg-gradient-to-b h-70 mb-32 from-slate-300 to-b md:items-center md:flex md:flex-col rounded-b p-10 grid">
         {/* //Dialog box */}
         <div className="text-red-400 text-2xl font-bold">{alerter}</div>
-        {/* {(uploadClicked || receiveClicked) && preClicked && (
+        {(uploadClicked || receiveClicked) && preClicked && (
           <BiSolidSkipPreviousCircle
             className="text-cyan-900 w-8 h-8 ml-64 md:ml-96"
             onClick={previousClicked}
           />
-        )} */}
+        )}
         {/* <button className="previous bg-red-400 m-1 w-4 h-4 rounded-full" /> */}
         {uploadClicked ? (
-          <form action="">
+          <form action="" className="grid">
             <input
               type="file"
               onChange={(e) => setSelectedFile(e.target.files[0])}
@@ -206,8 +208,7 @@ export default function LandingPage() {
               onClick={cancelled}
               className="mt-5 bg-red-400 rounded ml-3  p-2  hover:bg-purple-300 hover:font-bold"
             >
-              Cancel/ go back
-            </button>
+              Cancel            </button>
           </form>
         ) : (
           !receiveClicked && (
@@ -224,7 +225,7 @@ export default function LandingPage() {
         {/* //receive form */}
 
         {receiveClicked ? (
-          <form action="">
+          <form action="" className="grid">
             <input
               type="text"
               className="mt-5 rounded p-2"
@@ -244,7 +245,7 @@ export default function LandingPage() {
               onClick={cancelled}
               className="mt-5 bg-red-400 rounded ml-3  p-2  hover:bg-purple-300 hover:font-bold"
             >
-              Cancel/ go back
+              Cancel
             </button>
           </form>
         ) : (

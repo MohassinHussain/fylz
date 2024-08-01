@@ -3,6 +3,8 @@ import axios from 'axios'
 export default function TermsAndFooter() {
     const [email, setEmail] = useState("");
   const [query, setQuery] = useState("");
+  const [thank, setThank] = useState("")
+  const [submitted, setSubmitted] = useState(false)
   const submittedQuery = async (e)=> {
     e.preventDefault()
     if((email || query) == "" || (email || query) == " "){
@@ -11,14 +13,16 @@ export default function TermsAndFooter() {
     else if(!email.includes('@')){
         alert("Email is improper");
     }
-    else {
-        console.log(email, query);
-    }
+    // else {
+    //     console.log(email, query);
+    // }
 
     
     try {
         const result = await axios.post("http://localhost:8000/footer", {email, query});
         console.log(result.data);
+        setThank("Thanks for response😊")
+        setSubmitted(true)
     } catch (error) {
         console.log("ERROR IN FOOTER SENDING");
     }
@@ -104,6 +108,7 @@ export default function TermsAndFooter() {
         >
           Submit
         </button>
+       {submitted && <h2 className='bg-yellow-200 mt-5 p-2 font-semibold text-center'  >{thank}</h2>}
         <h1 className="font-semibold mt-4 text-2xl">For more information: </h1>
         <h2 className="text-2xl">archivenvo@gmail.com</h2>
       </form>
