@@ -5,7 +5,10 @@ export default function LandingPage() {
   //activators
   const [receiveClicked, setReceiveClicked] = useState(false);
   const [uploadClicked, setUploadClicked] = useState(false);
-
+  const [uploadFilesClicked, setUploadFilesClicked] = useState(false);
+  const [submitCodeClicked, setSubmitCodeClicked] = useState(false);
+  const [showDownloadButton, setShowDownloadButton] = useState(false);
+  const [alerter, setAlerter] = useState("");
   //footer
   const [email, seEmail] = useState("");
   const [query, seQuery] = useState("");
@@ -21,9 +24,12 @@ export default function LandingPage() {
   const submitFilesCode = async (e) => {
     e.preventDefault();
     if (code === "" || code === " ") {
-      alert("Enter code");
+      setAlerter("Enter code First..")
     } else {
       // console.log(code, selectedFile);
+
+      setUploadFilesClicked(true);
+
       const formData = new FormData();
       formData.append("code", code);
       formData.append("file", selectedFile);
@@ -40,37 +46,43 @@ export default function LandingPage() {
         );
         //
         console.log(result.data);
-        alert("Uploaded");
+        setAlerter("Uploaded");
         setCode("");
         setSelectedFile("");
+        setUploadFilesClicked(false);
       } catch (error) {
         console.log("ERROR NEAR UPLOADING", error);
       }
     }
   };
-  
- 
+
   const [received, setReceived] = useState(null);
-  const [url, setUrl] = useState("")
+  const [url, setUrl] = useState("");
 
   const submittedReceiveCode = async (e) => {
     e.preventDefault();
     // console.log(receiverCode);
-
+    setSubmitCodeClicked(true);
     try {
-      const response = await axios.post("https://archivenvo.onrender.com/file-get", {
-        receiverCode,
-      });
+      const response = await axios.post(
+        "https://archivenvo.onrender.com/file-get",
+        {
+          receiverCode,
+        }
+      );
       const fileName = response.data.data?.fileName;
-      
-      if (fileName) {
-        setUrl( `https://archivenvo.onrender.com/my-files/${fileName}`);
-        setReceived(response.data.data);
-      } else {
-        console.error('No fileName in response data');
-      }
 
-      
+      if (fileName) {
+        setUrl(`https://archivenvo.onrender.com/my-files/${fileName}`);
+        setReceived(response.data.data);
+
+        setShowDownloadButton(true);
+      } else {
+        console.error("No fileName in response data");
+        setAlerter("No file exist with the code/ please enter precisely");
+      }
+      setReceiverCode("");
+      setSubmitCodeClicked(false);
     } catch (error) {
       console.log("ERROR WHILE SEMDING RECIVE CODE", error);
     }
@@ -80,42 +92,51 @@ export default function LandingPage() {
     alert("Submitted");
   }
 
-
- function getFile() {
-  if(received){
-    setUrl(`https://archivenvo.onrender.com/my-files/${received.fileName}`)
-    window.open(`https://archivenvo.onrender.com/my-files/${received.fileName}`, "_blank" ,"noreferrer")
-}
- }
-
- function handleDown() {
-  if (url && received) {
-    axios.get(url, { responseType: 'blob' })  // Make sure to use 'blob' response type
-      .then(response => {
-        const blob = new Blob([response.data], { type: response.headers['content-type'] });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = received.fileName || 'downloaded-file'; // Fallback filename
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link); // Clean up the link element
-        URL.revokeObjectURL(link.href); // Release memory
-      })
-      .catch(error => {
-        console.error('Error downloading file:', error);
-      });
-  } else {
-    console.error('URL or received data is not set');
+  function getFile() {
+    if (received) {
+      setUrl(`https://archivenvo.onrender.com/my-files/${received.fileName}`);
+      window.open(
+        `https://archivenvo.onrender.com/my-files/${received.fileName}`,
+        "_blank",
+        "noreferrer"
+      );
+    }
   }
-}
 
+  function handleDown() {
+    if (url && received) {
+      axios
+        .get(url, { responseType: "blob" }) // Make sure to use 'blob' response type
+        .then((response) => {
+          const blob = new Blob([response.data], {
+            type: response.headers["content-type"],
+          });
+          const link = document.createElement("a");
+          link.href = URL.createObjectURL(blob);
+          link.download = received.fileName || "downloaded-file"; // Fallback filename
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link); // Clean up the link element
+          URL.revokeObjectURL(link.href); // Release memory
+        })
+        .catch((error) => {
+          console.error("Error downloading file:", error);
+        });
+    } else {
+      console.error("URL or received data is not set");
+    }
+  }
 
   return (
-    <div className="grid mt-16 items-center justify-center mx-10 md:mx-48">
+    <div className="grid mt-16 mx-10 md:mx-48 ">
       <div className="bg-gradient-to-b from-slate-400 to-blue-200 font-bold rounded-t p-4">
         <h1 className="text-4xl text-center">Welcome to ArchivEnvo!</h1>
       </div>
-      <div className="bg-blue-400 rounded-b p-10 grid">
+
+      <div className="bg-gradient-to-t md:items-center md:flex md:flex-col rounded-b p-10 grid">
+        {/* //Dialog box */}
+        <div className="text-red-400 text-2xl font-bold">{alerter}</div>
+
         {/* <button className="previous bg-red-400 m-1 w-4 h-4 rounded-full" /> */}
         {uploadClicked ? (
           <form action="">
@@ -136,9 +157,9 @@ export default function LandingPage() {
             <button
               type="submit"
               onClick={submitFilesCode}
-              className="mt-5 bg-red-200 rounded ml-5 p-2 w-80 hover:bg-purple-300 hover:font-bold"
+              className="mt-5 bg-red-200 rounded ml-3  p-2  hover:bg-purple-300 hover:font-bold"
             >
-              Upload files
+              {uploadFilesClicked ? "Uploading..." : "Upload files"}
             </button>
           </form>
         ) : (
@@ -146,7 +167,7 @@ export default function LandingPage() {
             // upload button
             <button
               onClick={() => setUploadClicked(true)}
-              className="mt-5 bg-red-200 rounded ml-5 p-2 w-80 hover:bg-purple-300 hover:font-bold"
+              className="mt-5 bg-orange-200 rounded md:w-40 md:justify-center md:flex  p-2   hover:bg-purple-300 hover:font-bold"
             >
               Upload
             </button>
@@ -167,33 +188,37 @@ export default function LandingPage() {
             <button
               type="submit"
               onClick={submittedReceiveCode}
-              className="mt-5 bg-red-200 rounded ml-5 p-2 w-80 hover:bg-purple-300 hover:font-bold"
+              className="mt-5 bg-red-200 rounded ml-3  p-2   hover:bg-purple-300 hover:font-bold"
             >
-              Submit
+              {submitCodeClicked ? "Submitting..." : "Submit"}
             </button>
           </form>
         ) : (
           !uploadClicked && (
             <button
               onClick={() => setReceiveClicked(true)}
-              className="mt-5 bg-red-200 rounded ml-5 p-2 w-80 hover:bg-purple-300 hover:font-bold"
+              className="mt-5 bg-red-200 rounded  md:w-40   p-2   hover:bg-purple-300 hover:font-bold"
             >
               Receive
             </button>
           )
         )}
-        {(uploadClicked || receiveClicked) && (!uploadClicked) && <button
-          onClick={getFile}
-          className="mt-5 bg-red-200 rounded ml-5 p-2 w-80 hover:bg-purple-300 hover:font-bold"
-        >
-          GET
-        </button>} 
+        {(uploadClicked || receiveClicked) &&
+          !uploadClicked &&
+          showDownloadButton && (
+            <div className="flex items-center justify-center">
+              <button
+                onClick={handleDown}
+                className="bg-green-300 w-28 mt-8 rounded hover:font-bold hover:bg-purple-200"
+              >
+                DOWNLOAD
+              </button>
+            </div>
+          )}
       </div>
 
       <h1>{received && received.fileName}</h1>
-         {/* <img className="w-20 h-20" src={received && received.fileName} alt="" />  */}
-        <button onClick={handleDown} className="bg-green-300">DOWNLOAD</button>
-
+      {/* <img className="w-20 h-20" src={received && received.fileName} alt="" />  */}
 
       <div className="rules terms grid text-white mt-12">
         <h1 className="mb-10 text-4xl font-semibold">Terms and Conditions</h1>
