@@ -168,7 +168,7 @@ export default function LandingPage() {
         </h1>
       </div>
 
-      <div className="bg-gradient-to-b h-60 from-slate-300 to-b md:items-center md:flex md:flex-col rounded-b p-10 grid">
+      <div className="bg-gradient-to-b h-60 mb-32 from-slate-300 to-b md:items-center md:flex md:flex-col rounded-b p-10 grid">
         {/* //Dialog box */}
         <div className="text-red-400 text-2xl font-bold">{alerter}</div>
         {(uploadClicked || receiveClicked) && preClicked && (
@@ -262,7 +262,7 @@ export default function LandingPage() {
           showDownloadButton && (
             <>
               {" "}
-              <h1 className="mt-5"> {received && received.fileName}</h1>
+              <h1 className="mt-5 bg-gray-200 rounded w-fit"> {received && received.fileName}</h1>
               <div className="flex items-center justify-center">
                 <button
                   onClick={handleDown}
