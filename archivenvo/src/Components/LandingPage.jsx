@@ -266,7 +266,7 @@ export default function LandingPage() {
               <div className="flex items-center justify-center">
                 <button
                   onClick={handleDown}
-                  className="bg-green-300 w-28 mt-8 rounded hover:font-bold hover:bg-purple-200"
+                  className="bg-green-300 w-28 mt-8 mb-10 rounded hover:font-bold hover:bg-purple-200"
                 >
                   DOWNLOAD
                 </button>
