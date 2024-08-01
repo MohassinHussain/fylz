@@ -1,6 +1,7 @@
+require('dotenv').config()
 const express = require("express")
 const mongoose = require('mongoose')
-const port = '5000'
+const port = process.env.PORT || '5000'
 const cors = require('cors');
 const app = express();
 const multer  = require('multer')
@@ -49,7 +50,7 @@ app.post('/file-upload', upload.single("file"), async (req, res)=>{
         
         const time = new Date();
         const uploadTime= time.getMinutes()
-        console.log(uploadTime);
+        console.log("Uploaded at: ",time.getHours, ":", time.getMinutes);
 
         setTimeout(async() => {
             const filePath = path.join(__dirname, "my-files", fileName)
@@ -59,7 +60,7 @@ app.post('/file-upload', upload.single("file"), async (req, res)=>{
                 res.status(500).send('Failed to delete file');
             }
             else {
-                console.log(`File deleted CODE: ${code} successfully from disk at ${time.getMinutes()}`);
+                console.log(`File deleted CODE: ${code} successfully from disk at ${time.getHours}:${time.getMinutes()}`);
             }
             });
 
@@ -67,7 +68,7 @@ app.post('/file-upload', upload.single("file"), async (req, res)=>{
             await fileModel.deleteMany({code})
             console.log(`Deleted CODE: ${code} from db Also`);
 
-        }, 120000 ); 
+        }, 240000 ); 
 
     } catch (error) {
         console.log("ERROR IN SENDING TO DB");
