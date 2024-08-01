@@ -7,6 +7,10 @@ const app = express();
 const multer  = require('multer')
 const path = require('path')
 const fs = require('fs')
+
+const fileModel = require('./Schemas/FileSchema');
+const userModel = require('./Schemas/UserSchema');
+
 app.use(cors())
 app.use('/my-files', express.static("my-files"))
 app.use(express.json())
@@ -24,8 +28,7 @@ mongoose.connect("mongodb+srv://userme:OhguQudhETIKckYQ@cluster0.hwpdi97.mongodb
 
 }).catch(e => console.log(e))
 
-const fileModel = require('./Schemas/FileSchema');
-const { log } = require("console");
+
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -97,3 +100,18 @@ app.post('/file-get', async(req, res)=> {
     
 })
 
+app.post('/footer', async (req, res)=>{
+    // const { email, query } = req.body;
+    //   console.log('Email:', email);
+//   console.log('Query:', query);
+
+    const { email, query } = req.body;
+
+    try {
+        await userModel.create({email, query})
+        res.send({status: "OK", data: "Uploaded footer to db"})
+    } catch (error) {
+        console.log("Error in sending data to mongo from footer", error);
+        res.send("Cant upload to db: from footer")
+    }
+})
