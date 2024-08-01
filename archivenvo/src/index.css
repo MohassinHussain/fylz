@@ -70,7 +70,16 @@ button:focus-visible {
 body {
   background: linear-gradient(360deg, rgba(49,214,215,1) 0%, rgba(11,38,156,1) 100%);
 } */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Nunito:ital,wght@0,200..1000;1,200..1000&family=PT+Serif:ital,wght@0,400;0,700;1,400;1,700&family=Poetsen+One&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Kalnia+Glaze:wght@100..700&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Nunito:ital,wght@0,200..1000;1,200..1000&family=PT+Serif:ital,wght@0,400;0,700;1,400;1,700&family=Poetsen+One&family=Sedan+SC&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Kalnia+Glaze:wght@100..700&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Nunito:ital,wght@0,200..1000;1,200..1000&family=PT+Serif:ital,wght@0,400;0,700;1,400;1,700&family=Poetsen+One&family=Sedan+SC&display=swap');
+body {
+  /* font-family: "PT Serif", serif; */
+  /* font-family: "Sedan SC", serif; */
+  /* font-family:  serif; */
 
+
+}
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
