@@ -66,7 +66,7 @@ export default function LandingPage() {
         if (axios.isCancel(error)) {
           console.log("Request canceled:", error.message);
         } else {
-          console.log("ERROR NEAR UPLOADING", error);
+          console.log("ERROR NEAR UPLOADING CANCELLATION", error);
         }
         setUploadFilesClicked(false);
       }
@@ -114,7 +114,7 @@ export default function LandingPage() {
       if (axios.isCancel(error)) {
         console.log("Request canceled:", error.message);
       } else {
-        console.log("ERROR NEAR UPLOADING", error);
+        // console.log("ERROR NEAR UPLOADING", error);
       }
       setUploadFilesClicked(false);
     }
@@ -170,7 +170,7 @@ export default function LandingPage() {
     <div className="grid mt-16 mx-10 md:mx-48 ">
       <div className="logo">
         <img
-          src="src\assets\inSiteLogo.jpg"
+          src="/inSiteLogo.jpg"
           className="rounded w-full mb-10 mix-blend-lighten hover:translate-y-3 hover:translate-x-6 hover:drop-shadow-lg hover:transition-all"
           alt=""
         />
