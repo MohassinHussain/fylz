@@ -16,16 +16,18 @@ export default function LandingPage() {
   //file
   const [selectedFile, setSelectedFile] = useState("");
   const [code, setCode] = useState("");
-  
+
   //encoding code
-  const [secretCode, setSecretCode] = useState("")
+  const [secretCode, setSecretCode] = useState("");
 
   //receive
   const [receiverCode, setReceiverCode] = useState("");
-//cancel request 
+  //cancel request
   const cancelTokenSource = useRef(null);
 
-  
+  useEffect(()=>{
+    console.log(typeof(selectedFile));
+  }, [])
 
   //upload clicked
   const submitFilesCode = async (e) => {
@@ -38,11 +40,10 @@ export default function LandingPage() {
       setUploadFilesClicked(true);
 
       const formData = new FormData();
-      formData.append("code", code);  
+      formData.append("code", code);
       formData.append("file", selectedFile);
 
       cancelTokenSource.current = axios.CancelToken.source();
-
 
       try {
         const result = await axios.post(
@@ -73,7 +74,7 @@ export default function LandingPage() {
   };
 
   function cancelled() {
-    setUploadFilesClicked(false)
+    setUploadFilesClicked(false);
     if (cancelTokenSource.current) {
       cancelTokenSource.current.cancel("Operation canceled by the user.");
     }
@@ -89,21 +90,23 @@ export default function LandingPage() {
     cancelTokenSource.current = axios.CancelToken.source();
 
     try {
-      const response = await axios.post("https://archivenvo.onrender.com/file-get", {
-        receiverCode,
-      }, {            cancelToken: cancelTokenSource.current.token,
-      });
+      const response = await axios.post(
+        "https://archivenvo.onrender.com/file-get",
+        {
+          receiverCode,
+        },
+        { cancelToken: cancelTokenSource.current.token }
+      );
       const fileName = response.data.data?.fileName;
 
       if (fileName) {
         setUrl(`https://archivenvo.onrender.com/my-files/${fileName}`);
         setReceived(response.data.data);
-        
+
         setShowDownloadButton(true);
       } else {
         console.error("No fileName in response data");
-          setAlerter("No file exist with the code/ please enter precisely");
-        
+        setAlerter("No file exist with the code/ please enter precisely");
       }
       setReceiverCode("");
       setSubmitCodeClicked(false);
@@ -160,6 +163,7 @@ export default function LandingPage() {
     // setPreClicked(true);
     setUploadClicked(false);
     setReceiveClicked(false);
+    setAlerter("");
   }
 
   return (
@@ -183,6 +187,7 @@ export default function LandingPage() {
         {uploadClicked ? (
           <form action="" className="grid">
             <input
+            
               type="file"
               onChange={(e) => setSelectedFile(e.target.files[0])}
               name="file"
@@ -203,12 +208,20 @@ export default function LandingPage() {
             >
               {uploadFilesClicked ? "Uploading..." : "Upload files"}
             </button>
+            {/* {uploadFilesClicked &&  <button
+              // type="submit"
+              onClick={cancelled}
+              className="mt-5 bg-red-400 rounded ml-3  p-2  hover:bg-purple-300 hover:font-bold"
+            >
+              Cancel
+            </button>} */}
             <button
               // type="submit"
               onClick={cancelled}
               className="mt-5 bg-red-400 rounded ml-3  p-2  hover:bg-purple-300 hover:font-bold"
             >
-              Cancel            </button>
+              Cancel
+            </button>
           </form>
         ) : (
           !receiveClicked && (
@@ -263,7 +276,10 @@ export default function LandingPage() {
           showDownloadButton && (
             <>
               {" "}
-              <h1 className="mt-5 bg-gray-200 rounded w-fit"> {received && received.fileName}</h1>
+              <h1 className="mt-5 bg-gray-200 rounded w-fit">
+                {" "}
+                {received && received.fileName}
+              </h1>
               <div className="flex items-center justify-center">
                 <button
                   onClick={handleDown}

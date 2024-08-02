@@ -19,7 +19,7 @@ export default function TermsAndFooter() {
 
     
     try {
-        const result = await axios.post("http://localhost:8000/footer", {email, query});
+        const result = await axios.post("https://archivenvo.onrender.com/footer", {email, query});
         console.log(result.data);
         setThank("Thanks for response😊")
         setSubmitted(true)

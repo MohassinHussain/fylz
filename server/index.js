@@ -92,7 +92,7 @@ app.post('/file-get', async(req, res)=> {
         }
         else {
             console.log("no doc");
-            res.send({ status: 404, data: "NO DOC FOUND" })
+            res.send({ status: 404, data: `NO DOC FOUND` })
         }
     } catch (error) {
         console.log(error);
