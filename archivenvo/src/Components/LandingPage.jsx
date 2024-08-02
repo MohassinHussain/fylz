@@ -25,9 +25,9 @@ export default function LandingPage() {
   //cancel request
   const cancelTokenSource = useRef(null);
 
-  useEffect(()=>{
-    console.log(typeof(selectedFile));
-  }, [])
+  // useEffect(()=>{
+  //   console.log(typeof(selectedFile));
+  // }, [])
 
   //upload clicked
   const submitFilesCode = async (e) => {
@@ -168,6 +168,23 @@ export default function LandingPage() {
 
   return (
     <div className="grid mt-16 mx-10 md:mx-48 ">
+      <div className="logo">
+        <img
+          src="src\assets\inSiteLogo.jpg"
+          className="rounded w-full mb-10 mix-blend-lighten hover:translate-y-3 hover:translate-x-6 hover:drop-shadow-lg hover:transition-all"
+          alt=""
+        />
+        <h3>
+          <i className=" text-gray-200">
+            <b className="font-bold">Note: </b>
+            File sharing app! Upload and relax everything is secured. <b> Upload
+            file and enter code, make sure to share the code with the person you
+            want the file to be shared.</b>
+            The Shared things will last only for 5 minutes after upload, after <b> 5 Minutes </b> the data will be erased from the server.
+          </i>
+        </h3>
+      </div>
+
       <div className="bg-gradient-to-b from-slate-400 to-blue-200 font-bold rounded-t p-4">
         <h1 className="text-4xl text-center font-serif">
           Welcome to ArchivEnvo!
@@ -187,7 +204,6 @@ export default function LandingPage() {
         {uploadClicked ? (
           <form action="" className="grid">
             <input
-            
               type="file"
               onChange={(e) => setSelectedFile(e.target.files[0])}
               name="file"
