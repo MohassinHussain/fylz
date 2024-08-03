@@ -20,7 +20,7 @@ app.get('/', (req, res)=>{
 })
 
 
-mongoose.connect("mongodb+srv://userme:OhguQudhETIKckYQ@cluster0.hwpdi97.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0").then(() => {
+mongoose.connect(process.env.MONGO_KEY).then(() => {
     console.log("Connected");
     app.listen(port, () => {
         console.log("Listening to port");
