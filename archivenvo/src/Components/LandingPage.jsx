@@ -1,8 +1,9 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState ,useRef } from "react";
 import axios from "axios";
 // import PreviousButton from "./PreviousButton";
 import { BiSolidSkipPreviousCircle } from "react-icons/bi";
 import TermsAndFooter from "./TermsAndFooter";
+import DemoVideo from './DemoVideo'
 
 export default function LandingPage() {
   //activators
@@ -12,6 +13,8 @@ export default function LandingPage() {
   const [submitCodeClicked, setSubmitCodeClicked] = useState(false);
   const [showDownloadButton, setShowDownloadButton] = useState(false);
   const [alerter, setAlerter] = useState("");
+  const [showCode, setShowCode] = useState(false);
+  const [copiedCode, setCopiedCode] = useState(false);
 
   //file
   const [selectedFile, setSelectedFile] = useState("");
@@ -57,10 +60,12 @@ export default function LandingPage() {
           }
         );
         //
+        setShowCode(true);
         console.log(result.data);
         setAlerter("Uploaded");
-        setCode("");
-        setSelectedFile("");
+        
+        // setCode("");x  
+        // setSelectedFile();
         setUploadFilesClicked(false);
       } catch (error) {
         if (axios.isCancel(error)) {
@@ -102,7 +107,7 @@ export default function LandingPage() {
       if (fileName) {
         setUrl(`https://archivenvo.onrender.com/my-files/${fileName}`);
         setReceived(response.data.data);
-
+        setAlerter("Got File")
         setShowDownloadButton(true);
       } else {
         console.error("No fileName in response data");
@@ -163,47 +168,71 @@ export default function LandingPage() {
     // setPreClicked(true);
     setUploadClicked(false);
     setReceiveClicked(false);
+    setShowCode(false)
     setAlerter("");
   }
 
+  function onCopy() {
+    // let copied = senderCode
+    if (code) {
+      navigator.clipboard
+        .writeText(code)
+        .then(() => {
+          // alert("Text copied to clipboard and hidden");
+          setAlerter("Text copied to clipboard and hidden");
+        })
+        .catch((err) => {
+          console.error("Failed to copy text: ", err);
+        });
+        setCode("")
+        setCopiedCode(true)
+    } else {
+      console.error("Code is empty");
+    }
+  }
+
   return (
-    <div className="grid mt-16 mx-10 md:mx-48 ">
-      <div className="logo">
+    <div className="grid mt-16 mx-10 md:mx-96 ">
+      {/* <div className="logo">
         <img
           src="/inSiteLogo.jpg"
           className="rounded w-full mb-10 mix-blend-lighten hover:translate-y-3 hover:translate-x-6 hover:drop-shadow-lg hover:transition-all"
           alt=""
         />
-        <h3>
-          <i className=" text-gray-200">
-            <b className="font-bold">Note: </b>
-            File sharing app! Upload and relax everything is secured. <b> Upload
-            file and enter code, make sure to share the code with the person you
-            want the file to be shared.</b>
-            The Shared things will last only for 5 minutes after upload, after <b> 5 Minutes </b> the data will be erased from the server.
-          </i>
-        </h3>
+        
+      </div> */}
+
+      <div className=" text-white border-x-2 border-y-1  font-bold rounded-b rounded-full p-4">
+        <h1 className="text-4xl text-center">Welcome to ArchivEnvo!</h1>
       </div>
 
-      <div className="bg-gradient-to-b from-slate-400 to-blue-200 font-bold rounded-t p-4">
-        <h1 className="text-4xl text-center font-serif">
-          Welcome to ArchivEnvo!
-        </h1>
-      </div>
-
-      <div className="bg-gradient-to-b h-70 mb-32 from-slate-300 to-b md:items-center md:flex md:flex-col rounded-b p-10 grid">
+      <div className="rounded-3xl hover:border-blue-400 bg-gradient-to-t from-black to-gray-900 hover:transition-all border-x-2 border-y-2 mb-10 to-b md:items-center md:flex md:flex-col  p-10 grid">
         {/* //Dialog box */}
         <div className="text-red-400 text-2xl font-bold">{alerter}</div>
         {(uploadClicked || receiveClicked) && preClicked && (
           <BiSolidSkipPreviousCircle
-            className="text-cyan-900 w-8 h-8 ml-64 md:ml-96"
+            className="text-cyan-100 w-8 h-8 ml-64 md:ml-96"
             onClick={previousClicked}
           />
         )}
+        {/* <h1>{code}</h1> */}
+        {showCode  && (
+          <div className="grid">
+            <h2 className="text-white">
+              Your file lasts for 5 mins, share this code: <b>{code}</b>
+            </h2>
+            <button onClick={onCopy} className="mt-2 mb-3 bg-gradient-to-r from-gray-200 to-gray-500 font-semibold rounded-full  p-2  hover:bg-purple-300 hover:font-bold">
+              Copy
+            </button>
+            {/* <div className="text-red-400 text-2xl font-bold">{alerter}</div> */}
+
+          </div>
+        )}
         {/* <button className="previous bg-red-400 m-1 w-4 h-4 rounded-full" /> */}
-        {uploadClicked ? (
+        {(uploadClicked && !showCode) ? (
           <form action="" className="grid">
             <input
+              className="p-5 border-x-2 border-y-2 rounded-full bg-slate-500"
               type="file"
               onChange={(e) => setSelectedFile(e.target.files[0])}
               name="file"
@@ -220,7 +249,7 @@ export default function LandingPage() {
             <button
               type="submit"
               onClick={submitFilesCode}
-              className="mt-5 bg-red-200 rounded ml-3  p-2  hover:bg-purple-300 hover:font-bold"
+              className="mt-5 bg-gradient-to-r from-gray-200 to-gray-500 font-semibold rounded-full ml-3  p-2  hover:bg-purple-300 hover:font-bold"
             >
               {uploadFilesClicked ? "Uploading..." : "Upload files"}
             </button>
@@ -234,7 +263,7 @@ export default function LandingPage() {
             <button
               // type="submit"
               onClick={cancelled}
-              className="mt-5 bg-red-400 rounded ml-3  p-2  hover:bg-purple-300 hover:font-bold"
+              className="bg-gradient-to-r from-red-200 to-gray-500 font-semibold mt-5  rounded-full ml-3  p-2  hover:bg-purple-300 hover:font-bold"
             >
               Cancel
             </button>
@@ -242,9 +271,9 @@ export default function LandingPage() {
         ) : (
           !receiveClicked && (
             // upload button
-            <button
+           !showCode && <button
               onClick={() => setUploadClicked(true)}
-              className="mt-5 bg-orange-200 rounded md:w-40 md:justify-center md:flex  p-2   hover:bg-purple-300 hover:font-bold"
+              className="mt-5 bg-gradient-to-r from-gray-200 to-gray-500 font-semibold rounded-full md:w-40 md:justify-center md:flex  p-2   hover:bg-purple-300 hover:font-bold"
             >
               Upload
             </button>
@@ -262,26 +291,27 @@ export default function LandingPage() {
               placeholder="Enter res code"
               onChange={(e) => setReceiverCode(e.target.value)}
             />
+
             <button
               type="submit"
               onClick={submittedReceiveCode}
-              className="mt-5 bg-red-200 rounded ml-3  p-2   hover:bg-purple-300 hover:font-bold"
+              className="mt-5 bg-gradient-to-r from-gray-200 to-gray-400 font-semibold rounded-full  md:justify-center md:flex  p-2   hover:bg-purple-300 hover:font-bold"
             >
               {submitCodeClicked ? "Submitting..." : "Submit"}
             </button>
             <button
               // type="submit"
               onClick={cancelled}
-              className="mt-5 bg-red-400 rounded ml-3  p-2  hover:bg-purple-300 hover:font-bold"
+              className="bg-gradient-to-r from-red-200 to-gray-500 font-semibold mt-5  rounded-full   p-2  hover:bg-purple-300 hover:font-bold"
             >
               Cancel
             </button>
           </form>
         ) : (
-          !uploadClicked && (
+          !uploadClicked   && (
             <button
               onClick={() => setReceiveClicked(true)}
-              className="mt-5 bg-red-200 rounded  md:w-40   p-2   hover:bg-purple-300 hover:font-bold"
+              className="mt-5 bg-gradient-to-r from-blue-200 to-gray-500 font-semibold rounded-full md:w-40 md:justify-center md:flex  p-2   hover:font-bold"
             >
               Receive
             </button>
@@ -307,10 +337,24 @@ export default function LandingPage() {
             </>
           )}
       </div>
+      <h3>
+        <i className=" text-gray-200">
+          <b className="font-bold">Note: </b>
+          File sharing app! Upload and relax everything is secured.{" "}
+          <b>
+            {" "}
+            Upload file and enter code, make sure to share the code with the
+            person you want the file to be shared.
+          </b>
+          The Shared things will last only for 5 minutes after upload, after{" "}
+          <b> 5 Minutes </b> the data will be erased from the server.
+        </i>
+      </h3>
 
       {/* <img className="w-20 h-20" src={received && received.fileName} alt="" />  */}
 
       {/* Terms and footer */}
+      <DemoVideo></DemoVideo>
       <TermsAndFooter />
     </div>
   );
