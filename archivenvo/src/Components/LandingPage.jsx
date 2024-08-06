@@ -1,11 +1,13 @@
-import React, { useEffect, useState ,useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 // import PreviousButton from "./PreviousButton";
 import { BiSolidSkipPreviousCircle } from "react-icons/bi";
 import TermsAndFooter from "./TermsAndFooter";
-import DemoVideo from './DemoVideo'
+import DemoVideo from "./DemoVideo";
+import TextSender from "./TextSender";
+import Previous from "./Previous";
 
-export default function LandingPage() {
+export default function LandingPage(props) {
   //activators
   const [receiveClicked, setReceiveClicked] = useState(false);
   const [uploadClicked, setUploadClicked] = useState(false);
@@ -15,6 +17,9 @@ export default function LandingPage() {
   const [alerter, setAlerter] = useState("");
   const [showCode, setShowCode] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
+
+  //for text uploading
+  const [uploadTextClicked, setUploadTextClicked] = useState(false);
 
   //file
   const [selectedFile, setSelectedFile] = useState("");
@@ -32,6 +37,9 @@ export default function LandingPage() {
   //   console.log(typeof(selectedFile));
   // }, [])
 
+  let encoded = "";
+  const [dispCode, setDispCode] = useState("");
+
   //upload clicked
   const submitFilesCode = async (e) => {
     e.preventDefault();
@@ -39,18 +47,25 @@ export default function LandingPage() {
       setAlerter("Enter code First..");
     } else {
       // console.log(code, selectedFile);
-
+      const chars =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZASDaasddhsnkfdjrtuoeosjWERTYUIOP{:MXK<C>LSMSHAK<>shskshwik";
+      let result = "";
+      for (let i = 0; i < 6; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      //  setCode("code+result")
+      encoded = code + result;
       setUploadFilesClicked(true);
-
+      setDispCode(encoded);
       const formData = new FormData();
-      formData.append("code", code);
+      formData.append("code", encoded);
       formData.append("file", selectedFile);
 
       cancelTokenSource.current = axios.CancelToken.source();
 
       try {
         const result = await axios.post(
-          "https://archivenvo.onrender.com/file-upload",
+          "http://localhost:8000/file-upload",
           formData,
           {
             headers: {
@@ -63,8 +78,8 @@ export default function LandingPage() {
         setShowCode(true);
         console.log(result.data);
         setAlerter("Uploaded");
-        
-        // setCode("");x  
+
+        // setCode("");x
         // setSelectedFile();
         setUploadFilesClicked(false);
       } catch (error) {
@@ -88,6 +103,8 @@ export default function LandingPage() {
   const [received, setReceived] = useState(null);
   const [url, setUrl] = useState("");
 
+  const [receivedUserText, setReceivedUserText] = useState("");
+
   const submittedReceiveCode = async (e) => {
     e.preventDefault();
     // console.log(receiverCode);
@@ -96,22 +113,39 @@ export default function LandingPage() {
 
     try {
       const response = await axios.post(
-        "https://archivenvo.onrender.com/file-get",
+        "http://localhost:8000/file-get",
         {
           receiverCode,
         },
         { cancelToken: cancelTokenSource.current.token }
       );
       const fileName = response.data.data?.fileName;
+      const userText = response.data.data.userText;
+      setReceivedUserText(response.data.data.userText);
+      // console.log(receivedUserText);
 
       if (fileName) {
-        setUrl(`https://archivenvo.onrender.com/my-files/${fileName}`);
+        setUrl(`http://localhost:8000/my-files/${fileName}`);
         setReceived(response.data.data);
-        setAlerter("Got File")
+        setAlerter("Got File");
         setShowDownloadButton(true);
+
+        // setSubmitCodeClicked(false);
       } else {
-        console.error("No fileName in response data");
-        setAlerter("No file exist with the code/ please enter precisely");
+        // console.error("No fileName in response data");
+        // setAlerter("No file exist with the code/ please enter precisely");
+        if (userText) {
+          console.log("USER TEXT RECEIVED: ", userText);
+          setAlerter("The required test is: ");
+          // setSubmitCodeClicked(false);
+        } else {
+          setSubmitCodeClicked(false);
+          console.error("No fileName in response data");
+          setAlerter(
+            "No file/ text exist with the code. Please enter precisely"
+          );
+        }
+        setSubmitCodeClicked(false);
       }
       setReceiverCode("");
       setSubmitCodeClicked(false);
@@ -131,9 +165,9 @@ export default function LandingPage() {
 
   function getFile() {
     if (received) {
-      setUrl(`https://archivenvo.onrender.com/my-files/${received.fileName}`);
+      setUrl(`http://localhost:8000/my-files/${received.fileName}`);
       window.open(
-        `https://archivenvo.onrender.com/my-files/${received.fileName}`,
+        `http://localhost:8000/my-files/${received.fileName}`,
         "_blank",
         "noreferrer"
       );
@@ -164,30 +198,51 @@ export default function LandingPage() {
     }
   }
   const [preClicked, setPreClicked] = useState(true);
-  function previousClicked() {
-    // setPreClicked(true);
-    setUploadClicked(false);
-    setReceiveClicked(false);
-    setShowCode(false)
-    setAlerter("");
-  }
+  // function previousClicked() {
+  //   // setPreClicked(true);
+  //   setUploadClicked(false);
+  //   setReceiveClicked(false);
+  //   setShowCode(false);
+  //   setAlerter("");
+  // }
 
-  function onCopy() {
+  function onCopy(e) {
+    e.preventDefault();
     // let copied = senderCode
-    if (code) {
+    if (dispCode) {
       navigator.clipboard
-        .writeText(code)
+        .writeText(dispCode)
         .then(() => {
           // alert("Text copied to clipboard and hidden");
-          setAlerter("Text copied to clipboard and hidden");
+          setAlerter("Code copied to clipboard");
         })
         .catch((err) => {
           console.error("Failed to copy text: ", err);
         });
-        setCode("")
-        setCopiedCode(true)
+      setCode("");
+      setCopiedCode(true);
     } else {
       console.error("Code is empty");
+    }
+  }
+
+  function onTextCopy(e) {
+    e.preventDefault();
+    if (receivedUserText) {
+      navigator.clipboard
+        .writeText(receivedUserText)
+        .then(() => {
+          // alert("Text copied to clipboard and hidden");
+          setAlerter("Text copied to clipboard");
+          setReceiverCode("");
+        })
+        .catch((err) => {
+          console.error("Failed to copy text: ", err);
+        });
+      setCode("");
+      setCopiedCode(true);
+    } else {
+      console.error("text is empty");
     }
   }
 
@@ -210,29 +265,37 @@ export default function LandingPage() {
         {/* //Dialog box */}
         <div className="text-red-400 text-2xl font-bold">{alerter}</div>
         {(uploadClicked || receiveClicked) && preClicked && (
-          <BiSolidSkipPreviousCircle
-            className="text-cyan-100 w-8 h-8 ml-64 md:ml-96"
-            onClick={previousClicked}
+          // <BiSolidSkipPreviousCircle
+          //   className="text-cyan-100 w-8 h-8 ml-64 md:ml-96"
+          //   onClick={previousClicked}
+          // />
+          <Previous
+            setUploadClicked={setUploadClicked}
+            setReceiveClicked={setReceiveClicked}
+            setShowCode={setShowCode}
+            setAlerter={setAlerter}
           />
         )}
         {/* <h1>{code}</h1> */}
-        {showCode  && (
+        {showCode && (
           <div className="grid">
             <h2 className="text-white">
-              Your file lasts for 5 mins, share this code: <b>{code}</b>
+              Your file lasts for 5 mins, share this code: <b>{dispCode}</b>
             </h2>
-            <button onClick={onCopy} className="mt-2 mb-3 bg-gradient-to-r from-gray-200 to-gray-500 font-semibold rounded-full  p-2  hover:bg-purple-300 hover:font-bold">
+            <button
+              onClick={onCopy}
+              className="mt-2 mb-3 bg-gradient-to-r from-gray-200 to-gray-500 font-semibold rounded-full  p-2  hover:bg-purple-300 hover:font-bold"
+            >
               Copy
             </button>
             {/* <div className="text-red-400 text-2xl font-bold">{alerter}</div> */}
-
           </div>
         )}
         {/* <button className="previous bg-red-400 m-1 w-4 h-4 rounded-full" /> */}
-        {(uploadClicked && !showCode) ? (
+        {uploadClicked && !showCode ? (
           <form action="" className="grid">
             <input
-              className="p-5 border-x-2 border-y-2 rounded-full bg-slate-500"
+              className="p-2 border-x-2 border-y-2 rounded-full bg-slate-500"
               type="file"
               onChange={(e) => setSelectedFile(e.target.files[0])}
               name="file"
@@ -241,7 +304,7 @@ export default function LandingPage() {
               type="text"
               value={code}
               onChange={(e) => setCode(e.target.value)}
-              className="mt-5 rounded p-2"
+              className="mt-3 rounded p-2"
               placeholder="Enter code"
             />
 
@@ -269,9 +332,10 @@ export default function LandingPage() {
             </button>
           </form>
         ) : (
-          !receiveClicked && (
-            // upload button
-           !showCode && <button
+          !receiveClicked &&
+          // upload button : add -> && !uploadTextClicked) to hide upload button
+          !showCode && (
+            <button
               onClick={() => setUploadClicked(true)}
               className="mt-5 bg-gradient-to-r from-gray-200 to-gray-500 font-semibold rounded-full md:w-40 md:justify-center md:flex  p-2   hover:bg-purple-300 hover:font-bold"
             >
@@ -284,6 +348,20 @@ export default function LandingPage() {
 
         {receiveClicked ? (
           <form action="" className="grid">
+            {receivedUserText && (
+              <div>
+                <h3 className="bg-yellow-100 font-bold p-2 rounded">
+                  {" "}
+                  {receivedUserText}
+                </h3>
+                <button
+                  onClick={onTextCopy}
+                  className="mt-2 mb-3 bg-gradient-to-r from-gray-200 to-gray-500 font-semibold rounded-full  p-2  hover:bg-purple-300 hover:font-bold"
+                >
+                  Copy
+                </button>
+              </div>
+            )}
             <input
               type="text"
               className="mt-5 rounded p-2"
@@ -308,7 +386,8 @@ export default function LandingPage() {
             </button>
           </form>
         ) : (
-          !uploadClicked   && (
+          // add -> && !uploadTextClicked) to hide receive button
+          !uploadClicked && (
             <button
               onClick={() => setReceiveClicked(true)}
               className="mt-5 bg-gradient-to-r from-blue-200 to-gray-500 font-semibold rounded-full md:w-40 md:justify-center md:flex  p-2   hover:font-bold"
@@ -321,9 +400,7 @@ export default function LandingPage() {
           !uploadClicked &&
           showDownloadButton && (
             <>
-              {" "}
               <h1 className="mt-5 bg-gray-200 rounded w-fit">
-                {" "}
                 {received && received.fileName}
               </h1>
               <div className="flex items-center justify-center">
@@ -336,7 +413,28 @@ export default function LandingPage() {
               </div>
             </>
           )}
+
+        {!uploadClicked && !receiveClicked && !uploadTextClicked && (
+          <button
+            onClick={(e) => setUploadTextClicked(true)}
+            className="bg-white mt-5 rounded-full p-2 md:w-40"
+          >
+            Upload text
+          </button>
+        )}
+        {!uploadClicked && !receiveClicked && (
+          <div>
+            {uploadTextClicked && (
+              <TextSender
+                alerter={alerter}
+                setAlerter={setAlerter}
+                setUploadTextClicked={setUploadTextClicked}
+              />
+            )}
+          </div>
+        )}
       </div>
+
       <h3>
         <i className=" text-gray-200">
           <b className="font-bold">Note: </b>

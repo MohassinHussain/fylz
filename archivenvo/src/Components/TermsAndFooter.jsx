@@ -1,34 +1,34 @@
-import React, {useState} from 'react'
-import axios from 'axios'
+import React, { useState } from "react";
+import axios from "axios";
 export default function TermsAndFooter() {
-    const [email, setEmail] = useState("");
+  const [email, setEmail] = useState("");
   const [query, setQuery] = useState("");
-  const [thank, setThank] = useState("")
-  const [submitted, setSubmitted] = useState(false)
-  const submittedQuery = async (e)=> {
-    e.preventDefault()
-    if((email || query) == "" || (email || query) == " "){
-        alert("Email and query are must to submit");
-    }
-    else if(!email.includes('@')){
-        alert("Email is improper");
+  const [thank, setThank] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+  const submittedQuery = async (e) => {
+    e.preventDefault();
+    if ((email || query) == "" || (email || query) == " ") {
+      alert("Email and query are must to submit");
+    } else if (!email.includes("@")) {
+      alert("Email is improper");
     }
     // else {
     //     console.log(email, query);
     // }
-
     else {
-    try {
-        const result = await axios.post("https://archivenvo.onrender.com/footer", {email, query});
+      try {
+        const result = await axios.post(
+          "https://archivenvo.onrender.com/footer",
+          { email, query }
+        );
         console.log(result.data);
-        setSubmitted(true)
-        setThank("Thanks for response😊")
-    } catch (error) {
+        setSubmitted(true);
+        setThank("Thanks for response😊");
+      } catch (error) {
         console.log("ERROR IN FOOTER SENDING");
+      }
     }
-  }
-    
-  }
+  };
   return (
     <div>
       {/* <div className="rules terms grid text-white mt-12">
@@ -84,17 +84,16 @@ export default function TermsAndFooter() {
           including file names and metadata.
         </p>
       </div> */}
-      <form className="Footer grid bg-gradient-to-t from-black to-gray-900 text-white mt-10 mb-10 p-10 rounded">
-        <h1 className="text-2xl font-semibold">Any queries? </h1>
+      <form className="Footer grid bg-gradient-to-t from-black to-gray-900  mt-10 mb-10 p-10 rounded">
+        <h1 className="text-white text-2xl font-semibold">Any queries? </h1>
         <input
-       
           type="email"
           name="email"
           className="mt-3 p-1 rounded md:w-60"
           placeholder="Your email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-        required={true}
+          required={true}
         />
         <textarea
           type="text"
@@ -106,15 +105,20 @@ export default function TermsAndFooter() {
         />
         <button
           onClick={submittedQuery}
-          
           className="bg-gradient-to-r from-red-200 to-gray-300 font-semibold p-2 mt-2 text-black rounded  active:bg-green-600 hover:bg-green-600 hover:font-bold md:w-20"
         >
           Submit
         </button>
-       {submitted && <h2 className='bg-yellow-200 mt-5 p-2 text-black font-semibold text-center'  >{thank}</h2>}
-        <h1 className="font-semibold mt-4 text-2xl">For more information: </h1>
-        <h2 className="text-2xl">archivenvo@gmail.com</h2>
+        {submitted && (
+          <h2 className="bg-yellow-200 mt-5 p-2 text-black font-semibold text-center">
+            {thank}
+          </h2>
+        )}
+        <h1 className="text-white font-semibold mt-4 text-2xl">
+          For more information:{" "}
+        </h1>
+        <h2 className="text-white text-2xl">archivenvo@gmail.com</h2>
       </form>
     </div>
-  )
+  );
 }
