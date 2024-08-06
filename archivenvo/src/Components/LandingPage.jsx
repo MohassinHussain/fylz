@@ -6,8 +6,12 @@ import TermsAndFooter from "./TermsAndFooter";
 import DemoVideo from "./DemoVideo";
 import TextSender from "./TextSender";
 import Previous from "./Previous";
+import ReactGA from 'react-ga'
 
 export default function LandingPage(props) {
+  useEffect(()=>{
+    ReactGA.pageview(window.location.pathname)
+  }, [])
   //activators
   const [receiveClicked, setReceiveClicked] = useState(false);
   const [uploadClicked, setUploadClicked] = useState(false);
