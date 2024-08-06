@@ -6,12 +6,18 @@ import TermsAndFooter from "./TermsAndFooter";
 import DemoVideo from "./DemoVideo";
 import TextSender from "./TextSender";
 import Previous from "./Previous";
-import ReactGA from 'react-ga'
+
+import ReactGA from 'react-ga4';
 
 export default function LandingPage(props) {
-  useEffect(()=>{
-    ReactGA.pageview(window.location.pathname)
-  }, [])
+  // useEffect(()=>{
+  //   ReactGA.pageview(window.location.pathname)
+  // }, [])
+  ReactGA.send({
+    hitType: "pageview",
+    page: "/",
+    title: "LANDING"
+  })
   //activators
   const [receiveClicked, setReceiveClicked] = useState(false);
   const [uploadClicked, setUploadClicked] = useState(false);
