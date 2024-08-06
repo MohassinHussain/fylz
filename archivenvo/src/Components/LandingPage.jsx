@@ -65,7 +65,7 @@ export default function LandingPage(props) {
 
       try {
         const result = await axios.post(
-          "http://localhost:8000/file-upload",
+          "https://archivenvo.onrender.com/file-upload",
           formData,
           {
             headers: {
@@ -113,7 +113,7 @@ export default function LandingPage(props) {
 
     try {
       const response = await axios.post(
-        "http://localhost:8000/file-get",
+        "https://archivenvo.onrender.com/file-get",
         {
           receiverCode,
         },
@@ -125,7 +125,7 @@ export default function LandingPage(props) {
       // console.log(receivedUserText);
 
       if (fileName) {
-        setUrl(`http://localhost:8000/my-files/${fileName}`);
+        setUrl(`https://archivenvo.onrender.com/my-files/${fileName}`);
         setReceived(response.data.data);
         setAlerter("Got File");
         setShowDownloadButton(true);
@@ -165,9 +165,9 @@ export default function LandingPage(props) {
 
   function getFile() {
     if (received) {
-      setUrl(`http://localhost:8000/my-files/${received.fileName}`);
+      setUrl(`https://archivenvo.onrender.com/my-files/${received.fileName}`);
       window.open(
-        `http://localhost:8000/my-files/${received.fileName}`,
+        `https://archivenvo.onrender.com/my-files/${received.fileName}`,
         "_blank",
         "noreferrer"
       );
