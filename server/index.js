@@ -10,7 +10,7 @@ const fs = require('fs')
 
 const fileModel = require('./Schemas/FileSchema');
 const userModel = require('./Schemas/UserSchema');
-const textModel = require('./Schemas/TextSchema')
+const textModel = require('./TextSchema')
 
 
 app.use(cors())
