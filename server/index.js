@@ -10,6 +10,8 @@ const fs = require('fs')
 
 const fileModel = require('./Schemas/FileSchema');
 const userModel = require('./Schemas/UserSchema');
+const textModel = require('./Schemas/TextSchema')
+
 
 app.use(cors())
 app.use('/my-files', express.static("my-files"))
@@ -78,9 +80,8 @@ app.post('/file-upload', upload.single("file"), async (req, res) => {
         console.log("ERROR IN SENDING TO DB");
     }
 })
-
 let resCode = null
-const textModel = require('./Schemas/TextStorageSchema')
+
 
 app.post('/file-get', async (req, res) => {
     const { receiverCode } = req.body;
