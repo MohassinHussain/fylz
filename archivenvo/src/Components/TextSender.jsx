@@ -12,13 +12,13 @@ export default function TextSender(props) {
     e.preventDefault();
     try {
       if (
-        (textCode === "" || textCode === " " || textCode === null) &&
+        (textCode === "" || textCode === " " || textCode === null) ||
         (userText === "" || userText === " " || userText === null)
       ) {
         props.setAlerter("Fill the fields to upload");
       } else {
         //  console.log(userText, textCode);
-        const response = await axios.post("http://localhost:8000/text-upload", {
+        const response = await axios.post("https://archivenvo.onrender.com/text-upload", {
           textCode,
           userText,
         });
