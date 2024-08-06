@@ -7,26 +7,30 @@ export default function TextSender(props) {
   const [textCode, setTextCode] = useState("");
 
   const [showCopy, setShowCopy] = useState(false);
-
+  const [uploadTextClicked, setUploadTextClicked] = useState(false)
   const textUploaded = async (e) => {
     e.preventDefault();
     try {
+      
       if (
         (textCode === "" || textCode === " " || textCode === null) ||
         (userText === "" || userText === " " || userText === null)
       ) {
         props.setAlerter("Fill the fields to upload");
       } else {
+        setUploadTextClicked(true);
         //  console.log(userText, textCode);
         const response = await axios.post("https://archivenvo.onrender.com/text-upload", {
           textCode,
           userText,
         });
         console.log(response.data);
-        props.setAlerter("Text and code uploaded to database");
+        props.setAlerter("Upload Success, copy the code and share, code valid till 5mins");
         setUserText("");
         setShowCopy(true);
+        setUploadTextClicked(false);
       }
+      
     } catch (e) {
       console.log("ERROR TEXT UPLOADING", e);
     }
@@ -48,6 +52,9 @@ export default function TextSender(props) {
     } else {
       console.error("Code is empty");
     }
+    setTimeout(() => {
+        props.setAlerter("");
+    }, 3000);
   }
 
   return (
@@ -90,7 +97,7 @@ export default function TextSender(props) {
         onClick={textUploaded}
         className="bg-white mt-3 p-2 rounded hover:bg-black hover:text-white hover:font-bold"
       >
-        Upload text
+        {uploadTextClicked ? "Uploading..." : "Upload"}
       </button>
     </div>
   );
