@@ -3,7 +3,7 @@ import axios from "axios";
 // import PreviousButton from "./PreviousButton";
 import { BiSolidSkipPreviousCircle } from "react-icons/bi";
 import TermsAndFooter from "./TermsAndFooter";
-import DemoVideo from "./DemoVideo";
+// import DemoVideo from "./DemoVideo";
 import TextSender from "./TextSender";
 import Previous from "./Previous";
 
@@ -462,7 +462,7 @@ export default function LandingPage(props) {
       {/* <img className="w-20 h-20" src={received && received.fileName} alt="" />  */}
 
       {/* Terms and footer */}
-      <DemoVideo></DemoVideo>
+      {/* <DemoVideo></DemoVideo> */}
       <TermsAndFooter />
     </div>
   );
