@@ -16,7 +16,7 @@ const app = express();
 
 // Middleware
 app.use(cors());
-app.use(compression()); // Enable gzip compression
+app.use(compression()); 
 app.use('/my-files', express.static("my-files", { maxAge: '1h' })); // Cache static files for 1 hour
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
