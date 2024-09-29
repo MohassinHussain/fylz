@@ -5,7 +5,7 @@ const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const compression = require('compression');
+// const compression = require('compression');
 
 const fileModel = require('./Schemas/FileSchema');
 const userModel = require('./Schemas/UserSchema');
@@ -16,7 +16,7 @@ const app = express();
 
 // Middleware
 app.use(cors());
-app.use(compression()); 
+// app.use(compression()); 
 app.use('/my-files', express.static("my-files", { maxAge: '1h' })); // Cache static files for 1 hour
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
