@@ -5,6 +5,10 @@ const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const cluster = require('cluster');
+const os = require('os');
+const cpu = os.cpus().length
+
 // const compression = require('compression');
 
 const fileModel = require('./Schemas/FileSchema');
@@ -30,12 +34,23 @@ app.get('/', (req, res) => {
 mongoose.connect(process.env.MONGO_URI || "mongodb+srv://userme:OhguQudhETIKckYQ@cluster0.hwpdi97.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0", {
     useNewUrlParser: true,
     useUnifiedTopology: true,
-    poolSize: 10 // Increased connection pool size
+    // poolSize: 10 // Increased connection pool size
 }).then(() => {
     console.log("Connected to MongoDB");
+    
+if(cluster.isPrimary) {
+    for(let i = 0; i<cpu; i++) {
+        cluster.fork();
+    }
+} 
+else {
+
     app.listen(port, () => {
         console.log(`Listening on port ${port}`);
+        // console.log(cpu);
+
     });
+}
 }).catch(e => console.log(e));
 
 // Multer Storage Configuration
