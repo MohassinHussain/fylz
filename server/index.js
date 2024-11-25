@@ -104,7 +104,7 @@ app.post('/file-upload', upload.single("file"), async (req, res) => {
             // Delete record from database
             await fileModel.deleteMany({ code });
             console.log(`Deleted record with code ${code} from the database.`);
-        }, 240000);
+        }, 7200000);
     } catch (error) {
         console.error("Error uploading file to database:", error);
     }
