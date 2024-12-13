@@ -39,7 +39,7 @@ const LandingPage = () => {
     formData.append("code", code);
 
     try {
-      const response = await axios.post(
+       await axios.post(
         "https://fylz.onrender.com/file-upload",
         formData,
         {
@@ -84,7 +84,7 @@ const LandingPage = () => {
       if (response.data.data.fileName) {
         setReceivedFile({
           fileName: response.data.data.fileName,
-          url: `https://archivenvo.onrender.com/my-files/${response.data.data.fileName}`
+          url: `https://fylz.onrender.com/my-files/${response.data.data.fileName}`
         });
         setReceiveAlertMessage("File received successfully!");
       } else {
