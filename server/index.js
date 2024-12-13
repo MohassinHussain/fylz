@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
+const fs = require('fs').promises;
 const cluster = require('cluster');
 const os = require('os');
 const cpu = os.cpus().length
@@ -15,7 +15,7 @@ const fileModel = require('./Schemas/FileSchema');
 const userModel = require('./Schemas/UserSchema');
 const textModel = require('./TextSchema');
 
-const port = '8000';
+const port = '5000';
 const app = express();
 
 // Middleware
@@ -67,12 +67,20 @@ const upload = multer({
 });
 
 // Utility for Deleting Files
-const deleteFile = (filePath) => new Promise((resolve, reject) => {
-    fs.unlink(filePath, (err) => {
-        if (err) return reject(err);
-        resolve();
-    });
-});
+// const deleteFile = (filePath) => new Promise((resolve, reject) => {
+//     fs.unlink(filePath, (err) => {
+//         if (err) return reject(err);
+//         resolve();
+//     });
+// });
+async function deleteFile(filePath) {
+    try {
+      await fs.unlink(filePath);
+      console.log("File deleted successfully.");
+    } catch (err) {
+      console.error("Error deleting file:", err);
+    }
+  }
 
 // File Upload Route
 app.post('/file-upload', upload.single("file"), async (req, res) => {
@@ -89,18 +97,17 @@ app.post('/file-upload', upload.single("file"), async (req, res) => {
 
         // Delay file deletion by 4 minutes (240000 ms)
         setTimeout(async () => {
-            const filePath = path.join(__dirname, "my-files", fileName);
             try {
-                await deleteFile(filePath);
-                console.log(`File deleted: ${fileName}`);
+              const filePath = path.join(__dirname, "my-files", fileName);
+              console.log("Deleting file:", filePath);
+              await deleteFile(filePath);
+          
+              await fileModel.deleteMany({ code });
+              console.log("Deleted record from database:", code);
             } catch (err) {
-                console.error("Error deleting file:", err);
+              console.error("Error during delayed deletion:", err);
             }
-
-            // Delete record from database
-            await fileModel.deleteMany({ code });
-            console.log(`Deleted record with code ${code} from the database.`);
-        }, 240000);
+          }, 240000);
     } catch (error) {
         console.error("Error uploading file to database:", error);
     }
