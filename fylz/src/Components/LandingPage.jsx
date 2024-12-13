@@ -41,7 +41,7 @@ const LandingPage = () => {
     try {
       const response = await axios.post(
         // "https://archivenvo.onrender.com/file-upload",
-        "http://localhost:8000/file-upload",
+        "https://fylz.onrender.com/file-upload",
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -73,7 +73,7 @@ const LandingPage = () => {
     try {
       const response = await axios.post(
         // "https://archivenvo.onrender.com/file-get",
-        "http://localhost:8000/file-get",
+        "https://fylz.onrender.com/file-get",
         { receiverCode },
         {
           onDownloadProgress: (progressEvent) => {
