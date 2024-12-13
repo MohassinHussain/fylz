@@ -15,7 +15,7 @@ const fileModel = require('./Schemas/FileSchema');
 const userModel = require('./Schemas/UserSchema');
 const textModel = require('./TextSchema');
 
-const port = process.env.PORT || '5000';
+const port = '8000';
 const app = express();
 
 // Middleware
