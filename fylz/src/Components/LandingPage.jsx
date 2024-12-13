@@ -2,15 +2,15 @@
 
 import React, { useState, useRef } from 'react';
 import axios from 'axios';
-import { BiSolidSkipPreviousCircle, BiUpload, BiDownload, BiCopy } from 'react-icons/bi';
+import { BiUpload, BiDownload, BiCopy } from 'react-icons/bi';
 
 const LandingPage = () => {
   const [activeTab, setActiveTab] = useState('upload');
   const [file, setFile] = useState(null);
   const [code, setCode] = useState('');
   const [receiverCode, setReceiverCode] = useState('');
-  const [alertMessage, setAlertMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  // const [alertMessage, setAlertMessage] = useState('');
+  // const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isReceiving, setIsReceiving] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -40,8 +40,6 @@ const LandingPage = () => {
 
     try {
       const response = await axios.post(
-        // "https://archivenvo.onrender.com/file-upload",
-        // "https://fylz.onrender.com/file-upload",
         "https://fylz.onrender.com/file-upload",
         formData,
         {
@@ -190,7 +188,7 @@ const LandingPage = () => {
               onClick={handleCopyCode}
               className="text-black ml-3  bg-slate-50 rounded px-2 py-1 hover:bg-slate-200 transition-colors duration-300"
             >
-              Copy code
+              <BiCopy />
             </button>
            </div>
             {isUploading && (
