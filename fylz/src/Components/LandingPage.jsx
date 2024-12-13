@@ -119,7 +119,7 @@ const LandingPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-pink-900 flex items-center justify-center px-4">
       <div className="bg-white bg-opacity-10 backdrop-filter backdrop-blur-lg rounded-3xl p-8 w-full max-w-md shadow-2xl">
-        <h1 className="text-4xl font-bold text-center text-white mb-8">Welcome to ArchivEnvo</h1>
+        <h1 className="text-4xl font-bold text-center text-white mb-8">Welcome to FYLz  </h1>
 
         <div className="flex mb-6">
           <button
