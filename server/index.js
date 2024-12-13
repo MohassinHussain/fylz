@@ -32,8 +32,6 @@ app.get('/', (req, res) => {
 
 // MongoDB Connection with Pooling
 mongoose.connect(process.env.MONGO_URI || "mongodb+srv://userme:OhguQudhETIKckYQ@cluster0.hwpdi97.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0", {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
     // poolSize: 10 // Increased connection pool size
 }).then(() => {
     console.log("Connected to MongoDB");
@@ -104,7 +102,7 @@ app.post('/file-upload', upload.single("file"), async (req, res) => {
             // Delete record from database
             await fileModel.deleteMany({ code });
             console.log(`Deleted record with code ${code} from the database.`);
-        }, 7200000);
+        }, 240000);
     } catch (error) {
         console.error("Error uploading file to database:", error);
     }
