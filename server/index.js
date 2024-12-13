@@ -31,7 +31,7 @@ app.get('/', (req, res) => {
 });
 
 // MongoDB Connection with Pooling
-mongoose.connect(process.env.MONGO_URI || "mongodb+srv://userme:OhguQudhETIKckYQ@cluster0.hwpdi97.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0", {
+mongoose.connect(process.env.MONGO_URI, {
     // poolSize: 10 // Increased connection pool size
 }).then(() => {
     console.log("Connected to MongoDB");

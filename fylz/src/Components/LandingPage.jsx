@@ -40,7 +40,8 @@ const LandingPage = () => {
 
     try {
       const response = await axios.post(
-        "https://archivenvo.onrender.com/file-upload",
+        // "https://archivenvo.onrender.com/file-upload",
+        "http://localhost:8000/file-upload",
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -71,7 +72,8 @@ const LandingPage = () => {
     setReceiveProgress(0);
     try {
       const response = await axios.post(
-        "https://archivenvo.onrender.com/file-get",
+        // "https://archivenvo.onrender.com/file-get",
+        "http://localhost:8000/file-get",
         { receiverCode },
         {
           onDownloadProgress: (progressEvent) => {
