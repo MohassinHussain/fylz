@@ -31,9 +31,7 @@ app.get('/', (req, res) => {
 });
 
 // MongoDB Connection with Pooling
-mongoose.connect(process.env.MONGO_URI, {
-    // poolSize: 10 // Increased connection pool size
-}).then(() => {
+mongoose.connect(process.env.MONGO_URI).then(() => {
     console.log("Connected to MongoDB");
     
 if(cluster.isPrimary) {
