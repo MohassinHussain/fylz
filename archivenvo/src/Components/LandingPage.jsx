@@ -1,469 +1,250 @@
-import React, { useEffect, useState, useRef } from "react";
-import axios from "axios";
-// import PreviousButton from "./PreviousButton";
-import { BiSolidSkipPreviousCircle } from "react-icons/bi";
-import TermsAndFooter from "./TermsAndFooter";
-// import DemoVideo from "./DemoVideo";
-import TextSender from "./TextSender";
-import Previous from "./Previous";
 
-import ReactGA from 'react-ga4';
 
-export default function LandingPage(props) {
-  // useEffect(()=>{
-  //   ReactGA.pageview(window.location.pathname)
-  // }, [])
-  ReactGA.send({
-    hitType: "pageview",
-    page: "/",
-    title: "LANDING"
-  })
-  //activators
-  const [receiveClicked, setReceiveClicked] = useState(false);
-  const [uploadClicked, setUploadClicked] = useState(false);
-  const [uploadFilesClicked, setUploadFilesClicked] = useState(false);
-  const [submitCodeClicked, setSubmitCodeClicked] = useState(false);
-  const [showDownloadButton, setShowDownloadButton] = useState(false);
-  const [alerter, setAlerter] = useState("");
-  const [showCode, setShowCode] = useState(false);
-  const [copiedCode, setCopiedCode] = useState(false);
+import React, { useState, useRef } from 'react';
+import axios from 'axios';
+import { BiSolidSkipPreviousCircle, BiUpload, BiDownload, BiCopy } from 'react-icons/bi';
 
-  //for text uploading
-  const [uploadTextClicked, setUploadTextClicked] = useState(false);
+const LandingPage = () => {
+  const [activeTab, setActiveTab] = useState('upload');
+  const [file, setFile] = useState(null);
+  const [code, setCode] = useState('');
+  const [receiverCode, setReceiverCode] = useState('');
+  const [alertMessage, setAlertMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isReceiving, setIsReceiving] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [receiveProgress, setReceiveProgress] = useState(0);
+  const [receivedFile, setReceivedFile] = useState(null);
+  const [uploadAlertMessage, setUploadAlertMessage] = useState('');
+  const [receiveAlertMessage, setReceiveAlertMessage] = useState('');
+  const [sharableCode, setSharableCode] = useState(null); // Added state for sharable code
+  const fileInputRef = useRef(null);
 
-  //file
-  const [selectedFile, setSelectedFile] = useState("");
-  const [code, setCode] = useState("");
-
-  //encoding code
-  const [secretCode, setSecretCode] = useState("");
-
-  //receive
-  const [receiverCode, setReceiverCode] = useState("");
-  //cancel request
-  const cancelTokenSource = useRef(null);
-
-  // useEffect(()=>{
-  //   console.log(typeof(selectedFile));
-  // }, [])
-
-  let encoded = "";
-  const [dispCode, setDispCode] = useState("");
-
-  //upload clicked
-  const submitFilesCode = async (e) => {
-    e.preventDefault();
-    if (code === "" || code === " ") {
-      setAlerter("Enter code First..");
-    } else {
-      // console.log(code, selectedFile);
-      const chars =
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZASDaasddhsnkfdjrtuoeosjWERTYUIOP{:MXK<C>LSMSHAK<>shskshwik";
-      let result = "";
-      for (let i = 0; i < 6; i++) {
-        result += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
-      //  setCode("code+result")
-      encoded = code + result;
-      setUploadFilesClicked(true);
-      setDispCode(encoded);
-      const formData = new FormData();
-      formData.append("code", encoded);
-      formData.append("file", selectedFile);
-
-      cancelTokenSource.current = axios.CancelToken.source();
-
-      try {
-        const result = await axios.post(
-          "https://archivenvo.onrender.com/file-upload",
-          formData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
-            cancelToken: cancelTokenSource.current.token,
-          }
-        );
-        //
-        setShowCode(true);
-        console.log(result.data);
-        setAlerter("Uploaded");
-
-        // setCode("");x
-        // setSelectedFile();
-        setUploadFilesClicked(false);
-      } catch (error) {
-        if (axios.isCancel(error)) {
-          console.log("Request canceled:", error.message);
-        } else {
-          console.log("ERROR NEAR UPLOADING CANCELLATION", error);
-        }
-        setUploadFilesClicked(false);
-      }
-    }
+  const handleFileChange = (e) => {
+    setFile(e.target.files[0]);
   };
 
-  function cancelled() {
-    setUploadFilesClicked(false);
-    if (cancelTokenSource.current) {
-      cancelTokenSource.current.cancel("Operation canceled by the user.");
-    }
-  }
-
-  const [received, setReceived] = useState(null);
-  const [url, setUrl] = useState("");
-
-  const [receivedUserText, setReceivedUserText] = useState("");
-
-  const submittedReceiveCode = async (e) => {
+  const handleUpload = async (e) => {
     e.preventDefault();
-    // console.log(receiverCode);
-    setSubmitCodeClicked(true);
-    cancelTokenSource.current = axios.CancelToken.source();
+    if (!file || !code) {
+      setUploadAlertMessage("Please select a file and enter a code.");
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadProgress(0);
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("code", code);
 
     try {
       const response = await axios.post(
-        "https://archivenvo.onrender.com/file-get",
+        "https://archivenvo.onrender.com/file-upload",
+        formData,
         {
-          receiverCode,
-        },
-        { cancelToken: cancelTokenSource.current.token }
-      );
-      const fileName = response.data.data?.fileName;
-      const userText = response.data.data.userText;
-      setReceivedUserText(response.data.data.userText);
-      // console.log(receivedUserText);
-
-      if (fileName) {
-        setUrl(`https://archivenvo.onrender.com/my-files/${fileName}`);
-        setReceived(response.data.data);
-        setAlerter("Got File");
-        setShowDownloadButton(true);
-
-        // setSubmitCodeClicked(false);
-      } else {
-        // console.error("No fileName in response data");
-        // setAlerter("No file exist with the code/ please enter precisely");
-        if (userText) {
-          console.log("USER TEXT RECEIVED: ", userText);
-          setAlerter("The required test is: ");
-          // setSubmitCodeClicked(false);
-        } else {
-          setSubmitCodeClicked(false);
-          console.error("No fileName in response data");
-          setAlerter(
-            "No file/ text exist with the code. Please enter precisely"
-          );
+          headers: { "Content-Type": "multipart/form-data" },
+          onUploadProgress: (progressEvent) => {
+            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            setUploadProgress(percentCompleted);
+          },
         }
-        setSubmitCodeClicked(false);
-      }
-      setReceiverCode("");
-      setSubmitCodeClicked(false);
+      );
+      setSharableCode(code); // Set sharable code after successful upload
+      setUploadAlertMessage("File uploaded successfully!");
     } catch (error) {
-      if (axios.isCancel(error)) {
-        console.log("Request canceled:", error.message);
-      } else {
-        // console.log("ERROR NEAR UPLOADING", error);
-      }
-      setUploadFilesClicked(false);
+      setUploadAlertMessage("Error uploading file. Please try again.");
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
     }
   };
 
-  function submittedQuery() {
-    alert("Submitted");
-  }
+  const handleReceive = async (e) => {
+    e.preventDefault();
+    if (!receiverCode) {
+      setReceiveAlertMessage("Please enter a receiver code.");
+      return;
+    }
 
-  function getFile() {
-    if (received) {
-      setUrl(`https://archivenvo.onrender.com/my-files/${received.fileName}`);
-      window.open(
-        `https://archivenvo.onrender.com/my-files/${received.fileName}`,
-        "_blank",
-        "noreferrer"
+    setIsReceiving(true);
+    setReceiveProgress(0);
+    try {
+      const response = await axios.post(
+        "https://archivenvo.onrender.com/file-get",
+        { receiverCode },
+        {
+          onDownloadProgress: (progressEvent) => {
+            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            setReceiveProgress(percentCompleted);
+          },
+        }
       );
-    }
-  }
-
-  function handleDown() {
-    if (url && received) {
-      axios
-        .get(url, { responseType: "blob" }) // Make sure to use 'blob' response type
-        .then((response) => {
-          const blob = new Blob([response.data], {
-            type: response.headers["content-type"],
-          });
-          const link = document.createElement("a");
-          link.href = URL.createObjectURL(blob);
-          link.download = received.fileName || "downloaded-file"; // Fallback filename
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link); // Clean up the link element
-          URL.revokeObjectURL(link.href); // Release memory
-        })
-        .catch((error) => {
-          console.error("Error downloading file:", error);
+      if (response.data.data.fileName) {
+        setReceivedFile({
+          fileName: response.data.data.fileName,
+          url: `https://archivenvo.onrender.com/my-files/${response.data.data.fileName}`
         });
-    } else {
-      console.error("URL or received data is not set");
+        setReceiveAlertMessage("File received successfully!");
+      } else {
+        setReceiveAlertMessage("No file found with this code.");
+      }
+    } catch (error) {
+      setReceiveAlertMessage("Error receiving file. Please try again.");
+    } finally {
+      setIsReceiving(false);
+      setReceiveProgress(0);
     }
-  }
-  const [preClicked, setPreClicked] = useState(true);
-  // function previousClicked() {
-  //   // setPreClicked(true);
-  //   setUploadClicked(false);
-  //   setReceiveClicked(false);
-  //   setShowCode(false);
-  //   setAlerter("");
-  // }
+  };
 
-  function onCopy(e) {
-    e.preventDefault();
-    // let copied = senderCode
-    if (dispCode) {
-      navigator.clipboard
-        .writeText(dispCode)
-        .then(() => {
-          // alert("Text copied to clipboard and hidden");
-          setAlerter("Code copied to clipboard");
-        })
-        .catch((err) => {
-          console.error("Failed to copy text: ", err);
-        });
-      setCode("");
-      setCopiedCode(true);
-    } else {
-      console.error("Code is empty");
+  const handleDownload = () => {
+    if (receivedFile) {
+      window.open(receivedFile.url, "_blank", "noreferrer");
     }
-  }
+  };
 
-  function onTextCopy(e) {
-    e.preventDefault();
-    if (receivedUserText) {
-      navigator.clipboard
-        .writeText(receivedUserText)
-        .then(() => {
-          // alert("Text copied to clipboard and hidden");
-          setAlerter("Text copied to clipboard");
-          setReceiverCode("");
-        })
-        .catch((err) => {
-          console.error("Failed to copy text: ", err);
-        });
-      setCode("");
-      setCopiedCode(true);
-    } else {
-      console.error("text is empty");
+  const handleCopyCode = () => {
+    if (sharableCode) {
+      navigator.clipboard.writeText(sharableCode).then(() => {
+        setUploadAlertMessage("Code copied to clipboard!");
+        setTimeout(() => {
+          setUploadAlertMessage(null);
+        }, 3000);
+      }, (err) => {
+        console.error('Could not copy text: ', err);
+      });
     }
-  }
+  };
 
   return (
-    <div className="grid mt-16 mx-10 md:mx-96 ">
-      {/* <div className="logo">
-        <img
-          src="/inSiteLogo.jpg"
-          className="rounded w-full mb-10 mix-blend-lighten hover:translate-y-3 hover:translate-x-6 hover:drop-shadow-lg hover:transition-all"
-          alt=""
-        />
-        
-      </div> */}
+    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-pink-900 flex items-center justify-center px-4">
+      <div className="bg-white bg-opacity-10 backdrop-filter backdrop-blur-lg rounded-3xl p-8 w-full max-w-md shadow-2xl">
+        <h1 className="text-4xl font-bold text-center text-white mb-8">Welcome to ArchivEnvo</h1>
 
-      <div className=" text-white border-x-2 border-y-1  font-bold rounded-b rounded-full p-4">
-        <h1 className="text-4xl text-center">Welcome to ArchivEnvo!</h1>
-      </div>
+        <div className="flex mb-6">
+          <button
+            className={`flex-1 py-2 rounded-l-full transition-colors duration-300 ${activeTab === 'upload' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'}`}
+            onClick={() => setActiveTab('upload')}
+          >
+            Upload
+          </button>
+          <button
+            className={`flex-1 py-2 rounded-r-full transition-colors duration-300 ${activeTab === 'receive' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'}`}
+            onClick={() => setActiveTab('receive')}
+          >
+            Receive
+          </button>
+        </div>
 
-      <div className="rounded-3xl hover:border-blue-400 bg-gradient-to-t from-black to-gray-900 hover:transition-all border-x-2 border-y-2 mb-10 to-b md:items-center md:flex md:flex-col  p-10 grid">
-        {/* //Dialog box */}
-        <div className="text-red-400 text-2xl font-bold">{alerter}</div>
-        {(uploadClicked || receiveClicked) && preClicked && (
-          // <BiSolidSkipPreviousCircle
-          //   className="text-cyan-100 w-8 h-8 ml-64 md:ml-96"
-          //   onClick={previousClicked}
-          // />
-          <Previous
-            setUploadClicked={setUploadClicked}
-            setReceiveClicked={setReceiveClicked}
-            setShowCode={setShowCode}
-            setAlerter={setAlerter}
-          />
-        )}
-        {/* <h1>{code}</h1> */}
-        {showCode && (
-          <div className="grid">
-            <h2 className="text-white">
-              Your file lasts for 5 mins, share this code: <b>{dispCode}</b>
-            </h2>
-            <button
-              onClick={onCopy}
-              className="mt-2 mb-3 bg-gradient-to-r from-gray-200 to-gray-500 font-semibold rounded-full  p-2  hover:bg-purple-300 hover:font-bold"
-            >
-              Copy
-            </button>
-            {/* <div className="text-red-400 text-2xl font-bold">{alerter}</div> */}
+        {activeTab === 'upload' && uploadAlertMessage && (
+          <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4 rounded" role="alert">
+            <p>{uploadAlertMessage}</p>
           </div>
         )}
-        {/* <button className="previous bg-red-400 m-1 w-4 h-4 rounded-full" /> */}
-        {uploadClicked && !showCode ? (
-          <form action="" className="grid">
-            <input
-              className="p-2 border-x-2 border-y-2 rounded-full bg-slate-500"
-              type="file"
-              onChange={(e) => setSelectedFile(e.target.files[0])}
-              name="file"
-            />
+        {activeTab === 'receive' && receiveAlertMessage && (
+          <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4 rounded" role="alert">
+            <p>{receiveAlertMessage}</p>
+          </div>
+        )}
+
+        {activeTab === 'upload' ? (
+          <form onSubmit={handleUpload} className="space-y-4">
+            <div className="relative">
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                className="hidden"
+                aria-label="Choose file"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current.click()}
+                className="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-full hover:bg-gray-200 transition-colors duration-300 flex items-center justify-center"
+              >
+                <BiUpload className="mr-2" aria-hidden="true" />
+                <span>{file ? file.name : 'Choose File'}</span>
+              </button>
+            </div>
             <input
               type="text"
               value={code}
               onChange={(e) => setCode(e.target.value)}
-              className="mt-3 rounded p-2"
               placeholder="Enter code"
+              className="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-label="Enter code"
             />
-
-            {/* uploadFilesbutton */}
             <button
               type="submit"
-              onClick={submitFilesCode}
-              className="mt-5 bg-gradient-to-r from-gray-200 to-gray-500 font-semibold rounded-full ml-3  p-2  hover:bg-purple-300 hover:font-bold"
+              disabled={isUploading}
+              className="w-full bg-blue-500 text-white py-2 px-4 rounded-full hover:bg-blue-600 transition-colors duration-300 flex items-center justify-center"
             >
-              {uploadFilesClicked ? "Uploading..." : "Upload files"}
+              {isUploading ? "Uploading..." : "Upload File"}
             </button>
-            {/* {uploadFilesClicked &&  <button
-              // type="submit"
-              onClick={cancelled}
-              className="mt-5 bg-red-400 rounded ml-3  p-2  hover:bg-purple-300 hover:font-bold"
+           <div className='flex justify-center'>
+           <span></span>
+           <button 
+              onClick={handleCopyCode}
+              className="text-black ml-3  bg-slate-50 rounded px-2 py-1 hover:bg-slate-200 transition-colors duration-300"
             >
-              Cancel
-            </button>} */}
-            <button
-              // type="submit"
-              onClick={cancelled}
-              className="bg-gradient-to-r from-red-200 to-gray-500 font-semibold mt-5  rounded-full ml-3  p-2  hover:bg-purple-300 hover:font-bold"
-            >
-              Cancel
+              Copy code
             </button>
-          </form>
-        ) : (
-          !receiveClicked &&
-          // upload button : add -> && !uploadTextClicked) to hide upload button
-          !showCode && (
-            <button
-              onClick={() => setUploadClicked(true)}
-              className="mt-5 bg-gradient-to-r from-gray-200 to-gray-500 font-semibold rounded-full md:w-40 md:justify-center md:flex  p-2   hover:bg-purple-300 hover:font-bold"
-            >
-              Upload
-            </button>
-          )
-        )}
-
-        {/* //receive form */}
-
-        {receiveClicked ? (
-          <form action="" className="grid">
-            {receivedUserText && (
-              <div>
-                <h3 className="bg-yellow-100 font-bold p-2 rounded">
-                  {" "}
-                  {receivedUserText}
-                </h3>
-                <button
-                  onClick={onTextCopy}
-                  className="mt-2 mb-3 bg-gradient-to-r from-gray-200 to-gray-500 font-semibold rounded-full  p-2  hover:bg-purple-300 hover:font-bold"
-                >
-                  Copy
-                </button>
+           </div>
+            {isUploading && (
+              <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mt-2">
+                <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${uploadProgress}%` }}></div>
               </div>
             )}
+          </form>
+        ) : (
+          <form onSubmit={handleReceive} className="space-y-4">
             <input
               type="text"
-              className="mt-5 rounded p-2"
               value={receiverCode}
-              placeholder="Enter res code"
               onChange={(e) => setReceiverCode(e.target.value)}
+              placeholder="Enter receiver code"
+              className="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-label="Enter receiver code"
             />
-
             <button
               type="submit"
-              onClick={submittedReceiveCode}
-              className="mt-5 bg-gradient-to-r from-gray-200 to-gray-400 font-semibold rounded-full  md:justify-center md:flex  p-2   hover:bg-purple-300 hover:font-bold"
+              disabled={isReceiving}
+              className="w-full bg-blue-500 text-white py-2 px-4 rounded-full hover:bg-blue-600 transition-colors duration-300 flex items-center justify-center"
             >
-              {submitCodeClicked ? "Submitting..." : "Submit"}
+              {isReceiving ? "Receiving..." : "Receive File"}
             </button>
-            <button
-              // type="submit"
-              onClick={cancelled}
-              className="bg-gradient-to-r from-red-200 to-gray-500 font-semibold mt-5  rounded-full   p-2  hover:bg-purple-300 hover:font-bold"
-            >
-              Cancel
-            </button>
+            {isReceiving && (
+              <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mt-2">
+                <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${receiveProgress}%` }}></div>
+              </div>
+            )}
           </form>
-        ) : (
-          // add -> && !uploadTextClicked) to hide receive button
-          !uploadClicked && (
-            <button
-              onClick={() => setReceiveClicked(true)}
-              className="mt-5 bg-gradient-to-r from-blue-200 to-gray-500 font-semibold rounded-full md:w-40 md:justify-center md:flex  p-2   hover:font-bold"
-            >
-              Receive
-            </button>
-          )
         )}
-        {(uploadClicked || receiveClicked) &&
-          !uploadClicked &&
-          showDownloadButton && (
-            <>
-              <h1 className="mt-5 bg-gray-200 rounded w-fit">
-                {received && received.fileName}
-              </h1>
-              <div className="flex items-center justify-center">
+
+        {activeTab === 'receive' && (
+          <>
+            {receivedFile && (
+              <div className="mt-4 p-4 bg-white bg-opacity-20 rounded-lg">
+                <p className="text-white mb-2">Received file: {receivedFile.fileName}</p>
                 <button
-                  onClick={handleDown}
-                  className="bg-green-300 w-28 mt-8 mb-10 rounded hover:font-bold hover:bg-purple-200"
+                  onClick={handleDownload}
+                  className="w-full bg-green-500 text-white py-2 px-4 rounded-full hover:bg-green-600 transition-colors duration-300 flex items-center justify-center"
                 >
-                  DOWNLOAD
+                  <BiDownload className="mr-2" />
+                  Download File
                 </button>
               </div>
-            </>
-          )}
-
-        {!uploadClicked && !receiveClicked && !uploadTextClicked && (
-          <button
-            onClick={(e) => setUploadTextClicked(true)}
-            className="bg-white mt-5 rounded-full p-2 md:w-40"
-          >
-            Upload text
-          </button>
-        )}
-        {!uploadClicked && !receiveClicked && (
-          <div>
-            {uploadTextClicked && (
-              <TextSender
-                alerter={alerter}
-                setAlerter={setAlerter}
-                setUploadTextClicked={setUploadTextClicked}
-              />
             )}
-          </div>
+          </>
         )}
+
+        <p className="text-sm text-gray-300 mt-6 text-center">
+          Files are securely shared and automatically deleted after 5 minutes.
+        </p>
       </div>
-
-      <h3>
-        <i className=" text-gray-200">
-          <b className="font-bold">Note: </b>
-          File sharing app! Upload and relax everything is secured.{" "}
-          <b>
-            {" "}
-            Upload file and enter code, make sure to share the code with the
-            person you want the file to be shared.
-          </b>
-          The Shared things will last only for 5 minutes after upload, after{" "}
-          <b> 5 Minutes </b> the data will be erased from the server.
-        </i>
-      </h3>
-
-      {/* <img className="w-20 h-20" src={received && received.fileName} alt="" />  */}
-
-      {/* Terms and footer */}
-      {/* <DemoVideo></DemoVideo> */}
-      <TermsAndFooter />
     </div>
   );
-}
+};
+
+export default LandingPage;
+
