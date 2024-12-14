@@ -42,12 +42,14 @@ if(cluster.isPrimary) {
 else {
 
     app.listen(port, () => {
-        console.log(`Listening on port ${port}`);
+        // console.log(`Listening on port ${port}`);
         // console.log(cpu);
 
     });
 }
-}).catch(e => console.log(e));
+}).catch(e => 
+    console.log(e)
+)
 
 // Multer Storage Configuration
 const storage = multer.diskStorage({
@@ -76,9 +78,9 @@ const upload = multer({
 async function deleteFile(filePath) {
     try {
       await fs.unlink(filePath);
-      console.log("File deleted successfully.");
+    //   console.log("File deleted successfully.");
     } catch (err) {
-      console.error("Error deleting file:", err);
+    //   console.error("Error deleting file:", err);
     }
   }
 
@@ -86,55 +88,55 @@ async function deleteFile(filePath) {
 app.post('/file-upload', upload.single("file"), async (req, res) => {
     const code = req.body.code;
     const fileName = req.file.filename;
-    console.log("File Upload:", code, fileName);
+    // console.log("File Upload:", code, fileName);
 
     // Send response immediately
     res.send("FILE UPLOADED SUCCESSFULLY");
 
     try {
         await fileModel.create({ code, fileName });
-        console.log("File stored in the database.");
+        // console.log("File stored in the database.");
 
         // Delay file deletion by 4 minutes (240000 ms)
         setTimeout(async () => {
             try {
               const filePath = path.join(__dirname, "my-files", fileName);
-              console.log("Deleting file:", filePath);
+            //   console.log("Deleting file:", filePath);
               await deleteFile(filePath);
           
               await fileModel.deleteMany({ code });
-              console.log("Deleted record from database:", code);
+            //   console.log("Deleted record from database:", code);
             } catch (err) {
               console.error("Error during delayed deletion:", err);
             }
           }, 240000);
     } catch (error) {
-        console.error("Error uploading file to database:", error);
+        // console.error("Error uploading file to database:", error);
     }
 });
 
 // File Retrieval Route
 app.post('/file-get', async (req, res) => {
     const { receiverCode } = req.body;
-    console.log("Receiver Code:", receiverCode);
+    // console.log("Receiver Code:", receiverCode);
 
     try {
         const document = await fileModel.findOne({ code: receiverCode });
         if (document) {
-            console.log("File document found:", document);
+            // console.log("File document found:", document);
             res.send({ status: "ok", data: document });
         } else {
             const textDoc = await textModel.findOne({ textCode: receiverCode });
             if (textDoc) {
-                console.log("Text document found:", textDoc);
+                // console.log("Text document found:", textDoc);
                 res.send({ status: "ok", data: textDoc });
             } else {
-                console.log("No document or text found");
+                // console.log("No document or text found");
                 res.status(404).send({ status: "error", data: "No document or text found" });
             }
         }
     } catch (error) {
-        console.error("Error retrieving document:", error);
+        // console.error("Error retrieving document:", error);
         res.status(500).send({ status: "error", data: "Server error" });
     }
 });
@@ -146,7 +148,7 @@ app.post('/footer', async (req, res) => {
         await userModel.create({ email, query });
         res.send({ status: "OK", data: "Footer data uploaded to the database" });
     } catch (error) {
-        console.error("Error uploading footer data to MongoDB:", error);
+        // console.error("Error uploading footer data to MongoDB:", error);
         res.status(500).send("Failed to upload footer data");
     }
 });
@@ -154,20 +156,20 @@ app.post('/footer', async (req, res) => {
 // Text Upload Route
 app.post("/text-upload", async (req, res) => {
     const { textCode, userText } = req.body;
-    console.log("Text Upload:", textCode, userText);
+    // console.log("Text Upload:", textCode, userText);
 
     try {
         await textModel.create({ textCode, userText });
-        console.log("Text stored in the database.");
+        // console.log("Text stored in the database.");
         res.send("Text uploaded to the database");
 
         // Delay text deletion by 4 minutes (240000 ms)
         setTimeout(async () => {
             await textModel.deleteMany({ textCode });
-            console.log(`Deleted text with code ${textCode} from the database.`);
+            // console.log(`Deleted text with code ${textCode} from the database.`);
         }, 240000);
     } catch (error) {
-        console.error("Error uploading text to the database:", error);
+        // console.error("Error uploading text to the database:", error);
         res.status(500).send("Failed to upload text");
     }
 });
