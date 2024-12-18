@@ -1,9 +1,9 @@
-# Archivenvo - File Sharing Platform 🔒
+# FYLz - File Sharing Platform 🔒
 
-**Archivenvo** is a file-sharing platform designed for temporary file exchanges. Built using modern web technologies, it ensures that shared files are stored for only a fixed amount of time before being automatically deleted, maintaining privacy and security.
+**FYLz** is a file-sharing platform designed for temporary file exchanges. Built using modern web technologies, it ensures that shared files are stored for only a fixed amount of time before being automatically deleted, maintaining privacy and security.
 
 ## 📁 About the Project
-Archivenvo allows users to upload files, share access codes, and download files within a short time frame. Once a file is uploaded, it is stored securely in the database and automatically deleted after **5 minutes** to ensure sensitive data isn't retained longer than necessary.
+FYLz allows users to upload files, share access codes, and download files within a short time frame. Once a file is uploaded, it is stored securely in the database and automatically deleted after **5 minutes** to ensure sensitive data isn't retained longer than necessary.
 
 ## 🚀 Features
 - **File Uploading**: Users can upload files through a simple and intuitive interface.
@@ -29,5 +29,5 @@ Archivenvo allows users to upload files, share access codes, and download files 
 - **Access Control**: Each file is associated with a unique access code that must be shared with others to allow access.
 
 ## 💬 Feedback
-If you have any feedback or encounter issues, feel free to open an issue or contact us at `archivenvo@gmail.com`.
+If you have any feedback or encounter issues, feel free to open an issue or contact us at `FYLz@gmail.com`.
 
