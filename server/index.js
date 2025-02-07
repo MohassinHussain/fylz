@@ -1,4 +1,5 @@
 require("dotenv").config();
+
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -8,7 +9,6 @@ const fs = require("fs").promises;
 const cluster = require("cluster");
 const os = require("os");
 const cpu = os.cpus().length;
-
 // const compression = require('compression');
 
 const fileModel = require("./Schemas/FileSchema");
@@ -21,7 +21,7 @@ const app = express();
 // Middleware
 app.use(cors());
 // app.use(compression());
-app.use("/my-files", express.static("my-files", { maxAge: "1h" })); // Cache static files for 1 hour
+app.use("/my-files", express.static("my-files", { maxAge: "1h" })); // Cacheinf the static files for 1 hour
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
@@ -30,11 +30,8 @@ app.get("/", (req, res) => {
   res.send("HELLO");
 });
 
-// MongoDB Connection with Pooling
 mongoose
-  .connect(
-    "mongodb+srv://userme:OhguQudhETIKckYQ@cluster0.hwpdi97.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",
-  )
+  .connect(process.env.MONGO_STRING)
   .then(() => {
     console.log("Connected to MongoDB");
 
