@@ -166,9 +166,21 @@ const LandingPage = () => {
     }
   };
 
+  // const handleDownload = () => {
+  //   if (receivedFile) {
+
+  //     window.open(receivedFile.url, "_blank", "noreferrer");
+  //   }
+  // };
+
   const handleDownload = () => {
     if (receivedFile) {
-      window.open(receivedFile.url, "_blank", "noreferrer");
+      const link = document.createElement("a");
+      link.href = receivedFile.url;
+      link.download = receivedFile.name || "download"; // Set a filename (optional)
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
   };
 
