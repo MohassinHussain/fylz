@@ -260,7 +260,9 @@ const LandingPage = () => {
         {(activeTab === "upload" || activeTab === "uploadText") &&
           uploadAlertMessage && (
             <div
-              className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4 rounded"
+              className={`border-l-4 border-yellow-500 ${
+                sharableCode ? "bg-green-200" : "bg-yellow-100"
+              } text-yellow-700 p-4 mb-4 rounded`}
               role="alert"
             >
               <p>{uploadAlertMessage}</p>
