@@ -268,39 +268,50 @@ const LandingPage = () => {
           )}
 
         {activeTab === "upload" && (
-          <form onSubmit={handleUpload} className="space-y-4">
-            <div className="relative">
+          <>
+            <form onSubmit={handleUpload} className="space-y-4">
+              <div className="relative">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  className="hidden"
+                  aria-label="Choose file"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current.click()}
+                  className="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-full hover:bg-gray-200 transition-colors duration-300 flex items-center justify-center"
+                >
+                  <BiUpload className="mr-2" aria-hidden="true" />
+                  <span>{file ? file.name : "Choose File"}</span>
+                </button>
+              </div>
               <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                className="hidden"
-                aria-label="Choose file"
+                type="text"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                placeholder="Enter code"
+                className="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                aria-label="Enter code"
               />
               <button
-                type="button"
-                onClick={() => fileInputRef.current.click()}
-                className="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-full hover:bg-gray-200 transition-colors duration-300 flex items-center justify-center"
+                type="submit"
+                disabled={isUploading}
+                className="w-full bg-blue-500 text-white py-2 px-4 rounded-full hover:bg-blue-600 transition-colors duration-300 flex items-center justify-center"
               >
-                <BiUpload className="mr-2" aria-hidden="true" />
-                <span>{file ? file.name : "Choose File"}</span>
+                {isUploading ? "Uploading..." : "Upload File"}
               </button>
-            </div>
-            <input
-              type="text"
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              placeholder="Enter code"
-              className="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-              aria-label="Enter code"
-            />
-            <button
-              type="submit"
-              disabled={isUploading}
-              className="w-full bg-blue-500 text-white py-2 px-4 rounded-full hover:bg-blue-600 transition-colors duration-300 flex items-center justify-center"
-            >
-              {isUploading ? "Uploading..." : "Upload File"}
-            </button>
+
+              {isUploading && (
+                <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+                  <div
+                    className="bg-blue-600 h-2.5 rounded-full"
+                    style={{ width: `${uploadProgress}%` }}
+                  ></div>
+                </div>
+              )}
+            </form>
             <div className="flex justify-center mt-3">
               <button
                 onClick={handleCopyCode}
@@ -309,15 +320,7 @@ const LandingPage = () => {
                 <BiCopy />
               </button>
             </div>
-            {isUploading && (
-              <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
-                <div
-                  className="bg-blue-600 h-2.5 rounded-full"
-                  style={{ width: `${uploadProgress}%` }}
-                ></div>
-              </div>
-            )}
-          </form>
+          </>
         )}
 
         {activeTab === "uploadText" && (
