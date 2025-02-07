@@ -32,7 +32,7 @@ const LandingPage = () => {
   const [textContent, setTextContent] = useState("");
   const fileInputRef = useRef(null);
 
-  const [isCodeVisible, setIsCodeVisible] = useState(false);
+  // const [isCodeVisible, setIsCodeVisible] = useState(false);
 
   useEffect(() => {
     // Hash the code whenever it changes
@@ -62,7 +62,8 @@ const LandingPage = () => {
     formData.append("code", hashedCode); // Use hashed code for the upload
 
     try {
-      await axios.post("http://localhost:5000/file-upload", formData, {
+      // await axios.post("http://localhost:5000/file-upload", formData, {
+      await axios.post("https://fylz.onrender.com/file-upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },
         onUploadProgress: (progressEvent) => {
           const percentCompleted = Math.round(
@@ -98,7 +99,8 @@ const LandingPage = () => {
     setUploadProgress(0);
     try {
       await axios.post(
-        "http://localhost:5000/text-upload",
+        // "http://localhost:5000/text-upload",
+        "https://fylz.onrender.com/text-upload",
         { textCode: hashedCode, userText: textContent }, // Use hashed code for the upload
         {
           headers: { "Content-Type": "application/json" },
@@ -123,7 +125,7 @@ const LandingPage = () => {
   const handleReceive = async (e) => {
     e.preventDefault();
     if (!receiverCode) {
-      setReceiveAlertMessage("Please enter a receiver code.");
+      // setReceiveAlertMessage("Please enter a receiver code.");
       return;
     }
 
@@ -131,7 +133,7 @@ const LandingPage = () => {
     setReceiveProgress(0);
     try {
       const response = await axios.post(
-        "http://localhost:5000/file-get",
+        "https://fylz.onrender.com/file-get",
         { receiverCode },
         {
           onDownloadProgress: (progressEvent) => {
@@ -147,17 +149,17 @@ const LandingPage = () => {
         if (response.data.type === "file") {
           setReceivedFile({
             fileName: response.data.data.fileName,
-            url: `http://localhost:5000/my-files/${response.data.data.fileName}`,
+            url: `https://fylz.onrender.com/my-files/${response.data.data.fileName}`,
           });
         } else if (response.data.type === "text") {
           setReceivedText(response.data.data.userText);
         }
-        setReceiveAlertMessage("Content received successfully!");
+        // setReceiveAlertMessage("Content received successfully!");
       } else {
-        setReceiveAlertMessage("No content found with this code.");
+        // setReceiveAlertMessage("No content found with this code.");
       }
     } catch (error) {
-      setReceiveAlertMessage("Error receiving content. Please try again.");
+      // setReceiveAlertMessage("Error receiving content. Please try again.");
     } finally {
       setIsReceiving(false);
       setReceiveProgress(0);
