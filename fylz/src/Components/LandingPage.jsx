@@ -403,7 +403,7 @@ const LandingPage = () => {
               className="w-full bg-green-500 text-white py-2 px-4 rounded-full hover:bg-green-600 transition-colors duration-300 flex items-center justify-center"
             >
               <BiDownload className="mr-2" />
-              Download File
+              View/ Download File
             </button>
           </div>
         )}
