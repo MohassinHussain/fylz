@@ -54,7 +54,8 @@ const storage = multer.diskStorage({
     cb(null, "./my-files");
   },
   filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now();
+    const now = new Date();
+    const uniqueSuffix = `${now.getDate()}${now.getHours()}${now.getMinutes()}${now.getSeconds()}`;
     cb(null, uniqueSuffix + "-" + file.originalname);
   },
 });
@@ -62,7 +63,7 @@ const storage = multer.diskStorage({
 // Multer Upload with File Size Limit
 const upload = multer({
   storage: storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB file size limit
+  limits: { fileSize: 200 * 1024 * 1024 }, // 10MB file size limit
 });
 
 // Utility for Deleting Files
@@ -112,34 +113,6 @@ app.post("/file-upload", upload.single("file"), async (req, res) => {
   }
 });
 
-// File Retrieval Route
-// app.post("/file-get", async (req, res) => {
-//   const { receiverCode } = req.body;
-//   // console.log("Receiver Code:", receiverCode);
-
-//   try {
-//     const document = await fileModel.findOne({ code: receiverCode });
-//     if (document) {
-//       // console.log("File document found:", document);
-//       res.send({ status: "ok", data: document });
-//     } else {
-//       const textDoc = await textModel.findOne({ textCode: receiverCode });
-//       if (textDoc) {
-//         // console.log("Text document found:", textDoc);
-//         res.send({ status: "ok", data: textDoc });
-//       } else {
-//         // console.log("No document or text found");
-//         res
-//           .status(404)
-//           .send({ status: "error", data: "No document or text found" });
-//       }
-//     }
-//   } catch (error) {
-//     // console.error("Error retrieving document:", error);
-//     res.status(500).send({ status: "error", data: "Server error" });
-//   }
-// });
-//
 app.post("/file-get", async (req, res) => {
   const { receiverCode } = req.body;
 
@@ -173,18 +146,6 @@ app.post("/file-get", async (req, res) => {
   }
 });
 
-// Footer API for storing user queries
-app.post("/footer", async (req, res) => {
-  const { email, query } = req.body;
-  try {
-    await userModel.create({ email, query });
-    res.send({ status: "OK", data: "Footer data uploaded to the database" });
-  } catch (error) {
-    // console.error("Error uploading footer data to MongoDB:", error);
-    res.status(500).send("Failed to upload footer data");
-  }
-});
-
 // Text Upload Route
 app.post("/text-upload", async (req, res) => {
   const { textCode, userText } = req.body;
@@ -205,3 +166,44 @@ app.post("/text-upload", async (req, res) => {
     res.status(500).send("Failed to upload text");
   }
 });
+
+// Footer API for storing user queries
+// app.post("/footer", async (req, res) => {
+//   const { email, query } = req.body;
+//   try {
+//     await userModel.create({ email, query });
+//     res.send({ status: "OK", data: "Footer data uploaded to the database" });
+//   } catch (error) {
+//     // console.error("Error uploading footer data to MongoDB:", error);
+//     res.status(500).send("Failed to upload footer data");
+//   }
+// });
+
+// File Retrieval Route
+// app.post("/file-get", async (req, res) => {
+//   const { receiverCode } = req.body;
+//   // console.log("Receiver Code:", receiverCode);
+
+//   try {
+//     const document = await fileModel.findOne({ code: receiverCode });
+//     if (document) {
+//       // console.log("File document found:", document);
+//       res.send({ status: "ok", data: document });
+//     } else {
+//       const textDoc = await textModel.findOne({ textCode: receiverCode });
+//       if (textDoc) {
+//         // console.log("Text document found:", textDoc);
+//         res.send({ status: "ok", data: textDoc });
+//       } else {
+//         // console.log("No document or text found");
+//         res
+//           .status(404)
+//           .send({ status: "error", data: "No document or text found" });
+//       }
+//     }
+//   } catch (error) {
+//     // console.error("Error retrieving document:", error);
+//     res.status(500).send({ status: "error", data: "Server error" });
+//   }
+// });
+//
