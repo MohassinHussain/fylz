@@ -1,6 +1,13 @@
 import { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import { BiUpload, BiDownload, BiCopy } from "react-icons/bi";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+
+const API_BASE = "https://fylz.onrender.com"; // later switch to process.env
+
 
 const hashCode = async (code) => {
   const characters =
@@ -16,7 +23,8 @@ const hashCode = async (code) => {
 
 const LandingPage = () => {
   const [activeTab, setActiveTab] = useState("upload");
-  const [file, setFile] = useState(null);
+  // const [file, setFile] = useState(null);
+  const [files, setFiles] = useState([]);
   const [code, setCode] = useState("");
   const [hashedCode, setHashedCode] = useState("");
   const [receiverCode, setReceiverCode] = useState("");
@@ -41,46 +49,99 @@ const LandingPage = () => {
     }
   }, [code]);
 
+  // const handleFileChange = (e) => {
+  //   setFile(e.target.files[0]);
+  // };
   const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
+    setFiles(Array.from(e.target.files)); // store as array
   };
+
+  // const handleUpload = async (e) => {
+  //   e.preventDefault();
+
+  //   if (!file || !hashedCode) {
+  //     setUploadAlertMessage("Please select a file and enter a code.");
+  //     setIsCodeVisible(true);
+
+  //     return;
+  //   }
+
+  //   setIsUploading(true);
+  //   setUploadProgress(0);
+  //   const formData = new FormData();
+  //   formData.append("file", file);
+  //   formData.append("code", hashedCode); // Use hashed code for the upload
+
+  //   try {
+  //     // await axios.post("https://fylz.onrender.com/file-upload", formData, {
+  //     await axios.post("https://fylz.onrender.com/file-upload", formData, {
+  //       headers: { "Content-Type": "multipart/form-data" },
+  //       onUploadProgress: (progressEvent) => {
+  //         const percentCompleted = Math.round(
+  //           (progressEvent.loaded * 100) / progressEvent.total,
+  //         );
+  //         setUploadProgress(percentCompleted);
+  //       },
+  //     });
+  //     setUploadAlertMessage("File uploaded successfully!");
+  //     setSharableCode(hashedCode); // Update sharable code after successful upload
+  //   } catch (error) {
+  //     setUploadAlertMessage("Error uploading file. Please try again.");
+  //   } finally {
+  //     setIsUploading(false);
+  //     setUploadProgress(0);
+  //   }
+  // };
 
   const handleUpload = async (e) => {
     e.preventDefault();
 
-    if (!file || !hashedCode) {
-      setUploadAlertMessage("Please select a file and enter a code.");
-      setIsCodeVisible(true);
-
+    if (!files.length || !hashedCode) {
+      setUploadAlertMessage("Please select at least one file and enter a code.");
       return;
     }
 
     setIsUploading(true);
     setUploadProgress(0);
+
     const formData = new FormData();
-    formData.append("file", file);
-    formData.append("code", hashedCode); // Use hashed code for the upload
+    files.forEach((file) => {
+      formData.append("files", file); // field name must match backend
+    });
+    formData.append("code", hashedCode);
 
     try {
-      // await axios.post("http://localhost:5000/file-upload", formData, {
       await axios.post("https://fylz.onrender.com/file-upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },
         onUploadProgress: (progressEvent) => {
           const percentCompleted = Math.round(
-            (progressEvent.loaded * 100) / progressEvent.total,
+            (progressEvent.loaded * 100) / progressEvent.total
           );
           setUploadProgress(percentCompleted);
         },
       });
-      setUploadAlertMessage("File uploaded successfully!");
-      setSharableCode(hashedCode); // Update sharable code after successful upload
+      setUploadAlertMessage("Files uploaded successfully!");
+      setSharableCode(hashedCode);
     } catch (error) {
-      setUploadAlertMessage("Error uploading file. Please try again.");
+      setUploadAlertMessage("Error uploading files. Please try again.");
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
     }
   };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    const droppedFiles = Array.from(e.dataTransfer.files);
+    setFiles((prev) => [...prev, ...droppedFiles]);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
+
+
+
 
   const handleTextUpload = async (e) => {
     e.preventDefault();
@@ -99,7 +160,7 @@ const LandingPage = () => {
     setUploadProgress(0);
     try {
       await axios.post(
-        // "http://localhost:5000/text-upload",
+        // "https://fylz.onrender.com/text-upload",
         "https://fylz.onrender.com/text-upload",
         { textCode: hashedCode, userText: textContent }, // Use hashed code for the upload
         {
@@ -148,12 +209,12 @@ const LandingPage = () => {
       if (response.data.status === "ok") {
         if (response.data.type === "file") {
           setReceivedFile({
-            fileName: response.data.data.fileName,
-            url: `https://fylz.onrender.com/my-files/${response.data.data.fileName}`,
+            fileNames: response.data.data.fileNames,  // <-- backend sends an array
           });
         } else if (response.data.type === "text") {
           setReceivedText(response.data.data.userText);
         }
+
         // setReceiveAlertMessage("Content received successfully!");
       } else {
         // setReceiveAlertMessage("No content found with this code.");
@@ -183,6 +244,39 @@ const LandingPage = () => {
       document.body.removeChild(link);
     }
   };
+
+  //   const handleDownloadAll = () => {
+  //   if (receivedFile?.fileNames?.length > 0) {
+  //     receivedFile.fileNames.forEach((fileName) => {
+  //       const url = `${API_BASE}/my-files/${fileName}`;
+  //       window.open(url, "_blank"); // opens each file in a new tab
+  //     });
+  //   }
+  // };
+
+  // const handleDownloadAll = () => {
+  //   if (receiverCode) {
+  //     const link = document.createElement("a");
+  //     link.href = `${API_BASE}/download-all/${receiverCode}`;
+  //     link.download = `files_${receiverCode}.zip`;
+  //     document.body.appendChild(link);
+  //     link.click();
+  //     document.body.removeChild(link);
+  //   }
+  // };
+
+  const handleDownloadAll = () => {
+    if (receiverCode) {
+      const link = document.createElement("a");
+      link.href = `${API_BASE}/download-all/${receiverCode}`;
+      link.download = `files_${receiverCode}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
+
 
   const handleCopyCode = () => {
     if (sharableCode) {
@@ -217,7 +311,7 @@ const LandingPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-pink-900 flex items-center justify-center px-4">
+    <div className="min-h-screen  flex items-center justify-center px-4">
       <div className="bg-white bg-opacity-10 backdrop-filter backdrop-blur-lg rounded-3xl p-8 w-full max-w-md shadow-2xl">
         <h1 className="text-4xl font-bold text-center text-white mb-8">
           Welcome to FYLz
@@ -225,31 +319,28 @@ const LandingPage = () => {
 
         <div className="flex mb-6">
           <button
-            className={`flex-1 py-2 rounded-l-full transition-colors duration-300 ${
-              activeTab === "upload"
-                ? "bg-blue-500 text-white"
-                : "bg-gray-200 text-gray-700"
-            }`}
+            className={`flex-1 py-2 rounded-l-full transition-colors duration-300 ${activeTab === "upload"
+              ? "bg-gray-500 text-white"
+              : "bg-gray-200 text-gray-700"
+              }`}
             onClick={() => setActiveTab("upload")}
           >
             Upload
           </button>
           <button
-            className={`flex-1 py-2 transition-colors duration-300 ${
-              activeTab === "receive"
-                ? "bg-blue-500 text-white"
-                : "bg-gray-200 text-gray-700"
-            }`}
+            className={`flex-1 py-2 transition-colors duration-300 ${activeTab === "receive"
+              ? "bg-gray-500 text-white"
+              : "bg-gray-200 text-gray-700"
+              }`}
             onClick={() => setActiveTab("receive")}
           >
             Receive
           </button>
           <button
-            className={`flex-1 py-2 rounded-r-full transition-colors duration-300 ${
-              activeTab === "uploadText"
-                ? "bg-blue-500 text-white"
-                : "bg-gray-200 text-gray-700"
-            }`}
+            className={`flex-1 py-2 rounded-r-full transition-colors duration-300 ${activeTab === "uploadText"
+              ? "bg-gray-500 text-white"
+              : "bg-gray-200 text-gray-700"
+              }`}
             onClick={() => setActiveTab("uploadText")}
           >
             UploadText
@@ -260,9 +351,8 @@ const LandingPage = () => {
         {(activeTab === "upload" || activeTab === "uploadText") &&
           uploadAlertMessage && (
             <div
-              className={`border-l-4 border-yellow-500 ${
-                sharableCode ? "bg-green-200" : "bg-yellow-100"
-              } text-yellow-700 p-4 mb-4 rounded`}
+              className={`border-l-4 border-yellow-500 ${sharableCode ? "bg-green-200" : "bg-yellow-100"
+                } text-yellow-700 p-4 mb-4 rounded`}
               role="alert"
             >
               <p>{uploadAlertMessage}</p>
@@ -273,21 +363,42 @@ const LandingPage = () => {
           <>
             <form onSubmit={handleUpload} className="space-y-4">
               <div className="relative">
-                <input
+                {/* <input
                   type="file"
                   ref={fileInputRef}
                   onChange={handleFileChange}
                   className="hidden"
                   aria-label="Choose file"
+                /> */}
+
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  multiple // <-- allow multiple files
+                  className="hidden"
+                  aria-label="Choose files"
                 />
+
                 <button
                   type="button"
                   onClick={() => fileInputRef.current.click()}
                   className="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-full hover:bg-gray-200 transition-colors duration-300 flex items-center justify-center"
                 >
                   <BiUpload className="mr-2" aria-hidden="true" />
-                  <span>{file ? file.name : "Choose File"}</span>
+                  <span>
+                    {files.length ? `${files.length} file(s) selected` : "Choose Files"}
+                  </span>
                 </button>
+
+                {/* <button
+                  type="button"
+                  onClick={() => fileInputRef.current.click()}
+                  className="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-full hover:bg-gray-200 transition-colors duration-300 flex items-center justify-center"
+                >
+                  <BiUpload className="mr-2" aria-hidden="true" />
+                  <span>{file ? file.name : "Choose File"}</span>
+                </button> */}
               </div>
               <input
                 type="text"
@@ -300,7 +411,7 @@ const LandingPage = () => {
               <button
                 type="submit"
                 disabled={isUploading}
-                className="w-full bg-blue-500 text-white py-2 px-4 rounded-full hover:bg-blue-600 transition-colors duration-300 flex items-center justify-center"
+                className="w-full bg-gray-600 text-white py-2 px-4 rounded-full hover:bg-gray-700 transition-colors duration-300 flex items-center justify-center"
               >
                 {isUploading ? "Uploading..." : "Upload File"}
               </button>
@@ -328,12 +439,25 @@ const LandingPage = () => {
         {activeTab === "uploadText" && (
           <>
             <form onSubmit={handleTextUpload} className="space-y-4">
-              <textarea
+              {/* <textarea
                 value={textContent}
                 onChange={(e) => setTextContent(e.target.value)}
                 placeholder="Enter your text here"
                 className="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 rows={6}
+              /> */}
+              <textarea
+                value={textContent}
+                onChange={(e) => {
+                  setTextContent(e.target.value);
+
+                  // auto resize
+                  e.target.style.height = "auto";
+                  e.target.style.height = `${e.target.scrollHeight}px`;
+                }}
+                placeholder="Enter your text here"
+                className="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                rows={1}
               />
               <input
                 type="text"
@@ -345,7 +469,7 @@ const LandingPage = () => {
               <button
                 type="submit"
                 disabled={isUploading}
-                className="w-full bg-blue-500 text-white py-2 px-4 rounded-full hover:bg-blue-600 transition-colors duration-300 flex items-center justify-center"
+                className="w-full bg-gray-600 text-white py-2 px-4 rounded-full hover:bg-gray-700 transition-colors duration-300 flex items-center justify-center"
               >
                 {isUploading ? "Uploading..." : "Upload Text"}
               </button>
@@ -382,7 +506,7 @@ const LandingPage = () => {
             <button
               type="submit"
               disabled={isReceiving}
-              className="w-full bg-blue-500 text-white py-2 px-4 rounded-full hover:bg-blue-600 transition-colors duration-300 flex items-center justify-center"
+              className="w-full bg-gray-600 text-white py-2 px-4 rounded-full hover:bg-gray-700 transition-colors duration-300 flex items-center justify-center"
             >
               {isReceiving ? "Receiving..." : "Receive"}
             </button>
@@ -398,7 +522,7 @@ const LandingPage = () => {
         )}
 
         {/* Display received file or text */}
-        {receivedFile && activeTab === "receive" && (
+        {/* {receivedFile && activeTab === "receive" && (
           <div className="mt-4 p-4 bg-white bg-opacity-20 rounded-lg">
             <p className="text-white mb-2">
               Received file: {receivedFile.fileName}
@@ -411,12 +535,126 @@ const LandingPage = () => {
               View/ Download File
             </button>
           </div>
+        )} */}
+
+
+        {/* {receivedFile?.fileNames?.map((fileName, idx) => (
+          
+          <div key={idx} className="mt-4 p-4 bg-white bg-opacity-20 rounded-lg">
+            <p className="text-white mb-2">Received</p>
+            <button
+              onClick={() => {
+                const link = document.createElement("a");
+                link.href = `https://fylz.onrender.com/my-files/${fileName}`;
+                link.download = fileName;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              }}
+              className="w-full bg-green-500 text-white py-2 px-4 rounded-full hover:bg-green-600 transition-colors duration-300 flex items-center justify-center"
+            >
+              <BiDownload className="mr-2" />
+              {fileName}
+            </button>
+          </div>
+        ))} */}
+
+
+        {/* Files show ONLY in Receive tab */}
+        {receivedFile?.fileNames?.length > 0 && (
+          <div className="mt-4 p-4 bg-white bg-opacity-20 rounded-lg">
+            <p className="text-white mb-2">Received files:</p>
+            {receivedFile.fileNames.map((fileName, idx) => (
+              <div key={idx} className="mb-2">
+                <button
+                  onClick={() => {
+                    const link = document.createElement("a");
+                    link.href = `${API_BASE}/my-files/${fileName}`;
+                    link.download = fileName;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                  }}
+                  className="w-full bg-green-500 text-white py-2 px-4 rounded-full hover:bg-green-600"
+                >
+                  <BiDownload className="mr-2 inline" />
+                  {fileName}
+                </button>
+              </div>
+            ))}
+
+            {/* Download All */}
+            {receivedFile.fileNames.length > 1 && (
+              <button
+                onClick={handleDownloadAll}
+                className="mt-3 w-full bg-blue-500 text-white py-2 px-4 rounded-full hover:bg-blue-600"
+              >
+                <BiDownload className="mr-2 inline" />
+                Download All
+              </button>
+            )}
+          </div>
         )}
 
+       
+
         {receivedText && activeTab === "receive" && (
+          
+          <div className="mt-4 p-4 bg-white bg-opacity-20 rounded-lg">
+            <p className="text-white mb-2">Received text:</p>
+
+           <button
+          onClick={handleReceivedTextCopy}
+          className="text-black mt-3 bg-slate-50 rounded px-2 py-1 hover:bg-slate-200 transition-colors duration-300"
+        >
+          <BiCopy />
+        </button>
+            {/* <div className="bg-gray-100 p-4 rounded-md text-sm prose max-w-none">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {receivedText}
+              </ReactMarkdown>
+            </div> */}
+
+            <div className="bg-gray-100 p-4 rounded-md text-sm prose max-w-none">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  code({ inline, className, children, ...props }) {
+                    const match = /language-(\w+)/.exec(className || "");
+                    return !inline && match ? (
+                      <SyntaxHighlighter
+                        style={oneDark}
+                        language={match[1]}
+                        PreTag="div"
+                        {...props}
+                      >
+                        {String(children).replace(/\n$/, "")}
+                      </SyntaxHighlighter>
+                    ) : (
+                      <code className="bg-gray-200 px-1 py-0.5 rounded" {...props}>
+                        {children}
+                      </code>
+                    );
+                  },
+                }}
+              >
+                {receivedText}
+              </ReactMarkdown>
+            </div>
+
+
+
+          </div>
+        )}
+
+        {/* {receivedText && activeTab === "receive" && (
           <div className="mt-4 p-4 bg-white bg-opacity-20 rounded-lg">
             <p className="text-white mb-2">Received text:</p>
             <pre className="bg-gray-100 p-4  rounded-md text-sm">
+              {receivedText}
+            </pre>
+
+            <pre className="bg-gray-100 p-4 rounded-md text-sm whitespace-pre-wrap">
               {receivedText}
             </pre>
             <button
@@ -426,7 +664,22 @@ const LandingPage = () => {
               <BiCopy />
             </button>
           </div>
-        )}
+        )} */}
+
+        {/* {receivedText && (
+          <div className="mt-4 p-4 bg-white bg-opacity-20 rounded-lg">
+            <p className="text-white mb-2">Received text:</p>
+            <pre className="bg-gray-100 p-4 rounded-md text-sm">
+              {receivedText}
+            </pre>
+            <button
+              onClick={handleReceivedTextCopy}
+              className="mt-3 text-black bg-slate-50 rounded px-2 py-1 hover:bg-slate-200"
+            >
+              <BiCopy />
+            </button>
+          </div>
+        )} */}
 
         <div className="text-lg text-white flex justify-center">
           <h2>Code: {sharableCode}</h2>

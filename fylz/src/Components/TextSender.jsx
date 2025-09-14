@@ -20,7 +20,7 @@ export default function TextSender(props) {
       } else {
         setUploadTextClicked(true);
         //  console.log(userText, textCode);
-        const response = await axios.post("https://archivenvo.onrender.com/text-upload", {
+        const response = await axios.post("https://fylz.onrender.com/text-upload", {
           textCode,
           userText,
         });

@@ -5,10 +5,12 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const multer = require("multer");
 const path = require("path");
-const fs = require("fs").promises;
+const fs = require("fs");
 const cluster = require("cluster");
 const os = require("os");
 const cpu = os.cpus().length;
+const archiver = require("archiver")
+// const fs = require("fs")
 // const compression = require('compression');
 
 const fileModel = require("./Schemas/FileSchema");
@@ -21,7 +23,14 @@ const app = express();
 // Middleware
 app.use(cors());
 // app.use(compression());
-app.use("/my-files", express.static("my-files", { maxAge: "1h" })); // Cacheinf the static files for 1 hour
+// app.use("/my-files", express.static("my-files", { maxAge: "1h" })); // Cacheinf the static files for 1 hour
+
+app.use(
+  "/my-files",
+  express.static(path.join(__dirname, "my-files"), { maxAge: "1h" })
+);
+
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
@@ -33,7 +42,7 @@ app.get("/", (req, res) => {
 mongoose
   .connect(process.env.MONGO_STRING)
   .then(() => {
-    console.log("Connected to MongoDB");
+    // console.log("Connected to MongoDB");
 
     if (cluster.isPrimary) {
       for (let i = 0; i < cpu; i++) {
@@ -61,10 +70,16 @@ const storage = multer.diskStorage({
 });
 
 // Multer Upload with File Size Limit
+// const upload = multer({
+//   storage: storage,
+//   limits: { fileSize: 200 * 1024 * 1024 }, // 10MB file size limit
+// });
+
 const upload = multer({
   storage: storage,
-  limits: { fileSize: 200 * 1024 * 1024 }, // 10MB file size limit
+  limits: { fileSize: 20 * 1024 * 1024 }, // 200MB per file
 });
+
 
 // Utility for Deleting Files
 // const deleteFile = (filePath) => new Promise((resolve, reject) => {
@@ -83,70 +98,198 @@ async function deleteFile(filePath) {
 }
 
 // File Upload Route
-app.post("/file-upload", upload.single("file"), async (req, res) => {
-  const code = req.body.code;
-  const fileName = req.file.filename;
-  // console.log("File Upload:", code, fileName);
+// app.post("/file-upload", upload.single("file"), async (req, res) => {
+//   const code = req.body.code;
+//   const fileName = req.file.filename;
+//   // console.log("File Upload:", code, fileName);
 
-  // Send response immediately
-  res.send("FILE UPLOADED SUCCESSFULLY");
+//   // Send response immediately
+//   res.send("FILE UPLOADED SUCCESSFULLY");
+
+//   try {
+//     await fileModel.create({ code, fileName });
+//     // console.log("File stored in the database.");
+
+//     // Delay file deletion by 4 minutes (240000 ms)
+//     setTimeout(async () => {
+//       try {
+//         const filePath = path.join(__dirname, "my-files", fileName);
+//         //   console.log("Deleting file:", filePath);
+//         await deleteFile(filePath);
+
+//         await fileModel.deleteMany({ code });
+//         //   console.log("Deleted record from database:", code);
+//       } catch (err) {
+//         console.error("Error during delayed deletion:", err);
+//       }
+//     }, 240000);
+//   } catch (error) {
+//     // console.error("Error uploading file to database:", error);
+//   }
+// });
+
+
+app.post("/file-upload", upload.array("files", 10), async (req, res) => {
+  const code = req.body.code;
+  const fileNames = req.files.map((f) => f.filename); // store all filenames
+
+  res.send("FILES UPLOADED SUCCESSFULLY");
 
   try {
-    await fileModel.create({ code, fileName });
-    // console.log("File stored in the database.");
+    await fileModel.create({ code, fileNames });
 
-    // Delay file deletion by 4 minutes (240000 ms)
+    // Delete after 4 minutes
     setTimeout(async () => {
       try {
-        const filePath = path.join(__dirname, "my-files", fileName);
-        //   console.log("Deleting file:", filePath);
-        await deleteFile(filePath);
-
+        for (let fileName of fileNames) {
+          const filePath = path.join(__dirname, "my-files", fileName);
+          await deleteFile(filePath);
+        }
         await fileModel.deleteMany({ code });
-        //   console.log("Deleted record from database:", code);
       } catch (err) {
         console.error("Error during delayed deletion:", err);
       }
     }, 240000);
   } catch (error) {
-    // console.error("Error uploading file to database:", error);
+    console.error("Error uploading files to database:", error);
   }
 });
+
+// app.post("/file-get", async (req, res) => {
+//   const { receiverCode } = req.body;
+
+//   try {
+//     const document = await fileModel.findOne({ code: receiverCode });
+
+//     if (document) {
+//       res.send({ status: "ok", type: "file", data: document });
+//     } else {
+//       const textDoc = await textModel.findOne({ textCode: receiverCode });
+
+//       if (textDoc) {
+//         res.send({ status: "ok", type: "text", data: textDoc });
+//       } else {
+//         res.status(404).send({
+//           status: "error",
+//           message: "No file or text found with this code",
+//         });
+//       }
+//     }
+//   } catch (error) {
+//     console.error("Error retrieving document:", error);
+//     res
+//       .status(500)
+//       .send({ status: "error", message: "Server error while retrieving data" });
+//   }
+// });
+
+// Text Upload Route
+
+// app.post("/file-get", async (req, res) => {
+//   const { receiverCode } = req.body;
+//   const fileDoc = await fileModel.findOne({ code: receiverCode });
+
+//   if (!fileDoc) {
+//     return res.json({ status: "error", message: "No file found" });
+//   }
+
+//   res.json({
+//     status: "ok",
+//     type: "file",
+//     data: {
+//       fileNames: fileDoc.fileNames, // <-- array of strings
+//     },
+//   });
+// });
 
 app.post("/file-get", async (req, res) => {
   const { receiverCode } = req.body;
 
   try {
-    // Check if the receiverCode corresponds to a file in the database
-    const document = await fileModel.findOne({ code: receiverCode });
+    // First check in fileModel
+    const fileDoc = await fileModel.findOne({ code: receiverCode });
 
-    if (document) {
-      // File found
-      res.send({ status: "ok", type: "file", data: document });
-    } else {
-      // Check if the receiverCode corresponds to text in the database
-      const textDoc = await textModel.findOne({ textCode: receiverCode });
-
-      if (textDoc) {
-        // Text found
-        res.send({ status: "ok", type: "text", data: textDoc });
-      } else {
-        // No file or text found
-        res.status(404).send({
-          status: "error",
-          message: "No file or text found with this code",
-        });
-      }
+    if (fileDoc) {
+      return res.json({
+        status: "ok",
+        type: "file",
+        data: {
+          fileNames: fileDoc.fileNames, // array of strings
+        },
+      });
     }
+
+    // If no file, check in textModel
+    const textDoc = await textModel.findOne({ textCode: receiverCode });
+    if (textDoc) {
+      return res.json({
+        status: "ok",
+        type: "text",
+        data: {
+          userText: textDoc.userText,
+        },
+      });
+    }
+
+    // If neither found
+    res.status(404).json({
+      status: "error",
+      message: "No file or text found with this code",
+    });
   } catch (error) {
     console.error("Error retrieving document:", error);
-    res
-      .status(500)
-      .send({ status: "error", message: "Server error while retrieving data" });
+    res.status(500).json({
+      status: "error",
+      message: "Server error while retrieving data",
+    });
   }
 });
 
-// Text Upload Route
+
+app.get("/download-all/:code", async (req, res) => {
+  try {
+    const { code } = req.params;
+    const fileDoc = await fileModel.findOne({ code });
+
+    if (!fileDoc || !fileDoc.fileNames || fileDoc.fileNames.length === 0) {
+      return res.status(404).json({ message: "No files found" });
+    }
+
+    // Set headers
+    res.setHeader("Content-Type", "application/zip");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=files_${code}.zip`
+    );
+
+    const archive = archiver("zip", { zlib: { level: 9 } });
+
+    // Pipe archive data to response
+    archive.pipe(res);
+
+    // Append files one by one
+    fileDoc.fileNames.forEach((fileName) => {
+      const filePath = path.join(__dirname, "uploads", fileName);
+      if (fs.existsSync(filePath)) {
+        archive.file(filePath, { name: fileName });
+      }
+    });
+
+    // Finalize archive (VERY IMPORTANT ⚡️)
+    archive.finalize();
+
+    // Handle errors
+    archive.on("error", (err) => {
+      console.error("Archive error:", err);
+      res.status(500).send({ error: "Error creating archive" });
+    });
+  } catch (err) {
+    console.error("Download all error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+
 app.post("/text-upload", async (req, res) => {
   const { textCode, userText } = req.body;
   // console.log("Text Upload:", textCode, userText);
@@ -166,44 +309,3 @@ app.post("/text-upload", async (req, res) => {
     res.status(500).send("Failed to upload text");
   }
 });
-
-// Footer API for storing user queries
-// app.post("/footer", async (req, res) => {
-//   const { email, query } = req.body;
-//   try {
-//     await userModel.create({ email, query });
-//     res.send({ status: "OK", data: "Footer data uploaded to the database" });
-//   } catch (error) {
-//     // console.error("Error uploading footer data to MongoDB:", error);
-//     res.status(500).send("Failed to upload footer data");
-//   }
-// });
-
-// File Retrieval Route
-// app.post("/file-get", async (req, res) => {
-//   const { receiverCode } = req.body;
-//   // console.log("Receiver Code:", receiverCode);
-
-//   try {
-//     const document = await fileModel.findOne({ code: receiverCode });
-//     if (document) {
-//       // console.log("File document found:", document);
-//       res.send({ status: "ok", data: document });
-//     } else {
-//       const textDoc = await textModel.findOne({ textCode: receiverCode });
-//       if (textDoc) {
-//         // console.log("Text document found:", textDoc);
-//         res.send({ status: "ok", data: textDoc });
-//       } else {
-//         // console.log("No document or text found");
-//         res
-//           .status(404)
-//           .send({ status: "error", data: "No document or text found" });
-//       }
-//     }
-//   } catch (error) {
-//     // console.error("Error retrieving document:", error);
-//     res.status(500).send({ status: "error", data: "Server error" });
-//   }
-// });
-//
