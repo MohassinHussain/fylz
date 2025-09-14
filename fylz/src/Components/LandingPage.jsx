@@ -6,7 +6,7 @@ import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 
-const API_BASE = "https://fylz.onrender.com"; // later switch to process.env
+const API_BASE = "https://bfylz.onrender.com"; // later switch to process.env
 
 
 const hashCode = async (code) => {
@@ -73,8 +73,8 @@ const LandingPage = () => {
   //   formData.append("code", hashedCode); // Use hashed code for the upload
 
   //   try {
-  //     // await axios.post("https://fylz.onrender.com/file-upload", formData, {
-  //     await axios.post("https://fylz.onrender.com/file-upload", formData, {
+  //     // await axios.post("https://bfylz.onrender.com/file-upload", formData, {
+  //     await axios.post("https://bfylz.onrender.com/file-upload", formData, {
   //       headers: { "Content-Type": "multipart/form-data" },
   //       onUploadProgress: (progressEvent) => {
   //         const percentCompleted = Math.round(
@@ -111,7 +111,7 @@ const LandingPage = () => {
     formData.append("code", hashedCode);
 
     try {
-      await axios.post("https://fylz.onrender.com/file-upload", formData, {
+      await axios.post("https://bfylz.onrender.com/file-upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },
         onUploadProgress: (progressEvent) => {
           const percentCompleted = Math.round(
@@ -160,8 +160,8 @@ const LandingPage = () => {
     setUploadProgress(0);
     try {
       await axios.post(
-        // "https://fylz.onrender.com/text-upload",
-        "https://fylz.onrender.com/text-upload",
+        // "https://bfylz.onrender.com/text-upload",
+        "https://bfylz.onrender.com/text-upload",
         { textCode: hashedCode, userText: textContent }, // Use hashed code for the upload
         {
           headers: { "Content-Type": "application/json" },
@@ -194,7 +194,7 @@ const LandingPage = () => {
     setReceiveProgress(0);
     try {
       const response = await axios.post(
-        "https://fylz.onrender.com/file-get",
+        "https://bfylz.onrender.com/file-get",
         { receiverCode },
         {
           onDownloadProgress: (progressEvent) => {
@@ -545,7 +545,7 @@ const LandingPage = () => {
             <button
               onClick={() => {
                 const link = document.createElement("a");
-                link.href = `https://fylz.onrender.com/my-files/${fileName}`;
+                link.href = `https://bfylz.onrender.com/my-files/${fileName}`;
                 link.download = fileName;
                 document.body.appendChild(link);
                 link.click();
