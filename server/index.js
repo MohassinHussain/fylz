@@ -157,7 +157,7 @@ app.get("/", (req, res) => {
 });
 
 // Auth: Login or Register
-app.post("/user/auth", authLimiter, async (req, res) => {
+app.post("/", authLimiter, async (req, res) => {
   try {
     const { username, password } = req.body;
 
