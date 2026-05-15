@@ -3,309 +3,469 @@ require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const compression = require("compression");
 const multer = require("multer");
+const rateLimit = require("express-rate-limit");
+const helmet = require("helmet");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 const path = require("path");
 const fs = require("fs");
-const cluster = require("cluster");
-const os = require("os");
-const cpu = os.cpus().length;
-const archiver = require("archiver")
-// const fs = require("fs")
-// const compression = require('compression');
+const archiver = require("archiver");
 
 const fileModel = require("./Schemas/FileSchema");
-const userModel = require("./Schemas/UserSchema");
 const textModel = require("./TextSchema");
+const userModel = require("./Schemas/UserSchema");
 
-const port = "5000" || "8000";
 const app = express();
+const PORT = process.env.PORT || 5000;
+const NODE_ENV = process.env.NODE_ENV || "development";
+const JWT_SECRET = process.env.JWT_SECRET || "fylz-secret-change-in-production";
+const JWT_EXPIRY = "1h";
 
-// Middleware
-app.use(cors());
-// app.use(compression());
-// app.use("/my-files", express.static("my-files", { maxAge: "1h" })); // Cacheinf the static files for 1 hour
+// Ensure uploads directory exists
+const UPLOAD_DIR = path.join(__dirname, "my-files");
+if (!fs.existsSync(UPLOAD_DIR)) {
+  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+}
+
+// Security headers
+app.use(helmet());
+app.use(compression());
+
+// CORS
+const CORS_ORIGINS = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(",")
+  : ["http://localhost:5173"];
 
 app.use(
-  "/my-files",
-  express.static(path.join(__dirname, "my-files"), { maxAge: "1h" })
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || CORS_ORIGINS.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    methods: ["GET", "POST"],
+    credentials: true,
+  })
 );
 
+// Rate limiting
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: { error: "Too many requests, please try again later." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use(globalLimiter);
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-
-// Root Route
-app.get("/", (req, res) => {
-  res.send("HELLO");
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { error: "Too many auth attempts, please try again later." },
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
-mongoose
-  .connect(process.env.MONGO_STRING)
-  .then(() => {
-    // console.log("Connected to MongoDB");
+const uploadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { error: "Too many upload requests, please try again later." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
-    if (cluster.isPrimary) {
-      for (let i = 0; i < cpu; i++) {
-        cluster.fork();
-      }
-    } else {
-      app.listen(port, () => {
-        // console.log(`Listening on port ${port}`);
-        // console.log(cpu);
-      });
-    }
+// Body parsing
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: false, limit: "10mb" }));
+
+// Static files
+app.use(
+  "/my-files",
+  express.static(UPLOAD_DIR, {
+    maxAge: "1h",
+    etag: true,
+    lastModified: true,
   })
-  .catch((e) => console.log(e));
+);
 
-// Multer Storage Configuration
+// MongoDB connection
+const MONGO_OPTIONS = {
+  maxPoolSize: 10,
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 45000,
+  family: 4,
+};
+
+mongoose
+  .connect(process.env.MONGO_STRING, MONGO_OPTIONS)
+  .then(async () => {
+    await ensureIndexes();
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`Server running on port ${PORT} in ${NODE_ENV} mode`);
+    });
+  })
+  .catch((err) => {
+    console.error("MongoDB connection error:", err);
+    process.exit(1);
+  });
+
+async function ensureIndexes() {
+  try {
+    await userModel.collection.createIndex({ username: 1 }, { unique: true });
+    await fileModel.collection.createIndex({ code: 1 });
+    await fileModel.collection.createIndex({ sender: 1 });
+    await fileModel.collection.createIndex({ recipient: 1 });
+    await textModel.collection.createIndex({ textCode: 1 });
+    await textModel.collection.createIndex({ sender: 1 });
+    await textModel.collection.createIndex({ recipient: 1 });
+    console.log("MongoDB indexes created");
+  } catch (err) {
+    console.error("Index creation error:", err);
+  }
+}
+
+// JWT Auth Middleware
+function authenticate(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Authentication required" });
+  }
+  const token = authHeader.split(" ")[1];
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (err) {
+    if (err.name === "TokenExpiredError") {
+      return res.status(401).json({ error: "Session expired", expired: true });
+    }
+    return res.status(401).json({ error: "Invalid token" });
+  }
+}
+
+// Health check
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok", uptime: process.uptime() });
+});
+
+app.get("/", (req, res) => {
+  res.send("FYLz API is running");
+});
+
+// Auth: Login or Register
+app.post("/user/auth", authLimiter, async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    if (!username || username.trim().length < 2) {
+      return res.status(400).json({ error: "Username must be at least 2 characters" });
+    }
+    if (!password || password.length < 6) {
+      return res.status(400).json({ error: "Password must be at least 6 characters" });
+    }
+
+    const cleanUsername = username.trim().toLowerCase();
+    const existing = await userModel.findOne({ username: cleanUsername });
+
+    let user;
+    let isNewUser = false;
+
+    if (existing) {
+      const match = await bcrypt.compare(password, existing.password);
+      if (!match) {
+        return res.status(401).json({ error: "Incorrect password" });
+      }
+      user = existing;
+    } else {
+      const hashed = await bcrypt.hash(password, 10);
+      user = await userModel.create({ username: cleanUsername, password: hashed });
+      isNewUser = true;
+    }
+
+    const token = jwt.sign(
+      { id: user._id, username: user.username },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRY }
+    );
+
+    res.json({
+      token,
+      username: user.username,
+      isNewUser,
+    });
+  } catch (error) {
+    console.error("Auth error:", error.message);
+    res.status(500).json({ error: "Authentication failed" });
+  }
+});
+
+// User Search (authenticated)
+app.get("/user/search", authenticate, async (req, res) => {
+  try {
+    const { q } = req.query;
+    if (!q || q.trim().length < 1) {
+      return res.json([]);
+    }
+    const users = await userModel
+      .find({ username: { $regex: q.trim().toLowerCase(), $options: "i" } })
+      .select("username")
+      .limit(10)
+      .lean();
+    res.json(users.map((u) => u.username).filter((u) => u !== req.user.username));
+  } catch (error) {
+    console.error("Search error:", error.message);
+    res.status(500).json({ error: "Search failed" });
+  }
+});
+
+// Get pending shares (authenticated)
+app.get("/shares", authenticate, async (req, res) => {
+  try {
+    const username = req.user.username;
+    const files = await fileModel
+      .find({ recipient: username })
+      .select("code sender fileNames createdAt")
+      .sort({ createdAt: -1 })
+      .lean();
+    const texts = await textModel
+      .find({ recipient: username })
+      .select("textCode sender createdAt")
+      .sort({ createdAt: -1 })
+      .lean();
+    res.json({
+      files: files.map((f) => ({
+        code: f.code,
+        sender: f.sender,
+        fileCount: f.fileNames.length,
+        createdAt: f.createdAt,
+      })),
+      texts: texts.map((t) => ({
+        code: t.textCode,
+        sender: t.sender,
+        createdAt: t.createdAt,
+      })),
+    });
+  } catch (error) {
+    console.error("Shares fetch error:", error.message);
+    res.status(500).json({ error: "Failed to fetch shares" });
+  }
+});
+
+// Multer Storage
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, "./my-files");
+    cb(null, UPLOAD_DIR);
   },
   filename: function (req, file, cb) {
-    const now = new Date();
-    const uniqueSuffix = `${now.getDate()}${now.getHours()}${now.getMinutes()}${now.getSeconds()}`;
+    const timestamp = Date.now();
+    const uniqueSuffix = `${timestamp}-${Math.random().toString(36).slice(2, 8)}`;
     cb(null, uniqueSuffix + "-" + file.originalname);
   },
 });
 
-// Multer Upload with File Size Limit
-// const upload = multer({
-//   storage: storage,
-//   limits: { fileSize: 200 * 1024 * 1024 }, // 10MB file size limit
-// });
-
 const upload = multer({
-  storage: storage,
-  limits: { fileSize: 20 * 1024 * 1024 }, // 200MB per file
+  storage,
+  limits: { fileSize: 20 * 1024 * 1024, files: 10 },
+  fileFilter: (req, file, cb) => {
+    if (file.size === 0) return cb(new Error("Empty file"));
+    cb(null, true);
+  },
 });
 
-
-// Utility for Deleting Files
-// const deleteFile = (filePath) => new Promise((resolve, reject) => {
-//     fs.unlink(filePath, (err) => {
-//         if (err) return reject(err);
-//         resolve();
-//     });
-// });
 async function deleteFile(filePath) {
   try {
-    await fs.unlink(filePath);
-    //   console.log("File deleted successfully.");
+    await fs.promises.unlink(filePath);
   } catch (err) {
-    //   console.error("Error deleting file:", err);
+    if (err.code !== "ENOENT") {
+      console.error(`Failed to delete ${filePath}:`, err.message);
+    }
   }
 }
 
-// File Upload Route
-// app.post("/file-upload", upload.single("file"), async (req, res) => {
-//   const code = req.body.code;
-//   const fileName = req.file.filename;
-//   // console.log("File Upload:", code, fileName);
-
-//   // Send response immediately
-//   res.send("FILE UPLOADED SUCCESSFULLY");
-
-//   try {
-//     await fileModel.create({ code, fileName });
-//     // console.log("File stored in the database.");
-
-//     // Delay file deletion by 4 minutes (240000 ms)
-//     setTimeout(async () => {
-//       try {
-//         const filePath = path.join(__dirname, "my-files", fileName);
-//         //   console.log("Deleting file:", filePath);
-//         await deleteFile(filePath);
-
-//         await fileModel.deleteMany({ code });
-//         //   console.log("Deleted record from database:", code);
-//       } catch (err) {
-//         console.error("Error during delayed deletion:", err);
-//       }
-//     }, 240000);
-//   } catch (error) {
-//     // console.error("Error uploading file to database:", error);
-//   }
-// });
-
-
-app.post("/file-upload", upload.array("files", 10), async (req, res) => {
-  const code = req.body.code;
-  const fileNames = req.files.map((f) => f.filename); // store all filenames
-
-  res.send("FILES UPLOADED SUCCESSFULLY");
-
+// File Upload (authenticated)
+app.post("/file-upload", authenticate, uploadLimiter, upload.array("files", 10), async (req, res) => {
   try {
-    await fileModel.create({ code, fileNames });
+    const { code, recipient } = req.body;
+    const fileNames = req.files.map((f) => f.filename);
 
-    // Delete after 4 minutes
+    res.send("FILES UPLOADED SUCCESSFULLY");
+
+    await fileModel.create({
+      code,
+      sender: req.user.username,
+      recipient: recipient || null,
+      fileNames,
+    });
+
     setTimeout(async () => {
       try {
-        for (let fileName of fileNames) {
-          const filePath = path.join(__dirname, "my-files", fileName);
-          await deleteFile(filePath);
+        for (const fileName of fileNames) {
+          await deleteFile(path.join(UPLOAD_DIR, fileName));
         }
         await fileModel.deleteMany({ code });
       } catch (err) {
-        console.error("Error during delayed deletion:", err);
+        console.error("Cleanup error:", err.message);
       }
     }, 240000);
   } catch (error) {
-    console.error("Error uploading files to database:", error);
+    console.error("File upload error:", error.message);
+    res.status(500).json({ error: "Failed to upload files" });
   }
 });
 
-// app.post("/file-get", async (req, res) => {
-//   const { receiverCode } = req.body;
+// Multer error handler
+app.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    if (err.code === "LIMIT_FILE_SIZE") {
+      return res.status(413).json({ error: "File too large. Max 20MB per file." });
+    }
+    if (err.code === "LIMIT_FILE_COUNT") {
+      return res.status(400).json({ error: "Too many files. Max 10 files." });
+    }
+    return res.status(400).json({ error: err.message });
+  }
+  if (err) {
+    return res.status(500).json({ error: err.message });
+  }
+  next();
+});
 
-//   try {
-//     const document = await fileModel.findOne({ code: receiverCode });
-
-//     if (document) {
-//       res.send({ status: "ok", type: "file", data: document });
-//     } else {
-//       const textDoc = await textModel.findOne({ textCode: receiverCode });
-
-//       if (textDoc) {
-//         res.send({ status: "ok", type: "text", data: textDoc });
-//       } else {
-//         res.status(404).send({
-//           status: "error",
-//           message: "No file or text found with this code",
-//         });
-//       }
-//     }
-//   } catch (error) {
-//     console.error("Error retrieving document:", error);
-//     res
-//       .status(500)
-//       .send({ status: "error", message: "Server error while retrieving data" });
-//   }
-// });
-
-// Text Upload Route
-
-// app.post("/file-get", async (req, res) => {
-//   const { receiverCode } = req.body;
-//   const fileDoc = await fileModel.findOne({ code: receiverCode });
-
-//   if (!fileDoc) {
-//     return res.json({ status: "error", message: "No file found" });
-//   }
-
-//   res.json({
-//     status: "ok",
-//     type: "file",
-//     data: {
-//       fileNames: fileDoc.fileNames, // <-- array of strings
-//     },
-//   });
-// });
-
-app.post("/file-get", async (req, res) => {
-  const { receiverCode } = req.body;
-
+// File/Text Retrieval (authenticated)
+app.post("/file-get", authenticate, async (req, res) => {
   try {
-    // First check in fileModel
-    const fileDoc = await fileModel.findOne({ code: receiverCode });
+    const { receiverCode } = req.body;
+    if (!receiverCode) {
+      return res.status(400).json({ status: "error", message: "Code is required" });
+    }
 
+    const fileDoc = await fileModel.findOne({ code: receiverCode }).lean();
     if (fileDoc) {
       return res.json({
         status: "ok",
         type: "file",
-        data: {
-          fileNames: fileDoc.fileNames, // array of strings
-        },
+        data: { fileNames: fileDoc.fileNames },
       });
     }
 
-    // If no file, check in textModel
-    const textDoc = await textModel.findOne({ textCode: receiverCode });
+    const textDoc = await textModel.findOne({ textCode: receiverCode }).lean();
     if (textDoc) {
       return res.json({
         status: "ok",
         type: "text",
-        data: {
-          userText: textDoc.userText,
-        },
+        data: { userText: textDoc.userText },
       });
     }
 
-    // If neither found
     res.status(404).json({
       status: "error",
       message: "No file or text found with this code",
     });
   } catch (error) {
-    console.error("Error retrieving document:", error);
-    res.status(500).json({
-      status: "error",
-      message: "Server error while retrieving data",
-    });
+    console.error("Retrieval error:", error.message);
+    res.status(500).json({ status: "error", message: "Server error" });
   }
 });
 
-
-app.get("/download-all/:code", async (req, res) => {
+// Download All as ZIP (authenticated)
+app.get("/download-all/:code", authenticate, async (req, res) => {
   try {
     const { code } = req.params;
-    const fileDoc = await fileModel.findOne({ code });
+    const fileDoc = await fileModel.findOne({ code }).lean();
 
     if (!fileDoc || !fileDoc.fileNames || fileDoc.fileNames.length === 0) {
       return res.status(404).json({ message: "No files found" });
     }
 
-    // Set headers
+    const archive = archiver("zip", { zlib: { level: 6 } });
+
+    let totalSize = 0;
+    let filesAdded = 0;
+
+    for (const fileName of fileDoc.fileNames) {
+      const filePath = path.join(UPLOAD_DIR, fileName);
+      try {
+        const stat = await fs.promises.stat(filePath);
+        archive.file(filePath, { name: fileName });
+        totalSize += stat.size;
+        filesAdded++;
+      } catch {
+        console.log(`File not found: ${fileName}`);
+      }
+    }
+
+    if (filesAdded === 0) {
+      return res.status(404).json({ message: "No files found on disk" });
+    }
+
     res.setHeader("Content-Type", "application/zip");
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename=files_${code}.zip`
-    );
+    res.setHeader("Content-Disposition", `attachment; filename=files_${code}.zip`);
+    res.setHeader("Content-Length", totalSize * 1.1);
 
-    const archive = archiver("zip", { zlib: { level: 9 } });
-
-    // Pipe archive data to response
     archive.pipe(res);
 
-    // Append files one by one
-    fileDoc.fileNames.forEach((fileName) => {
-      const filePath = path.join(__dirname, "uploads", fileName);
-      if (fs.existsSync(filePath)) {
-        archive.file(filePath, { name: fileName });
+    archive.on("error", (err) => {
+      console.error("Archive error:", err.message);
+      if (!res.headersSent) {
+        res.status(500).json({ error: "Archive creation failed" });
       }
     });
 
-    // Finalize archive (VERY IMPORTANT ⚡️)
-    archive.finalize();
-
-    // Handle errors
-    archive.on("error", (err) => {
-      console.error("Archive error:", err);
-      res.status(500).send({ error: "Error creating archive" });
+    archive.on("end", () => {
+      res.end();
     });
+
+    archive.finalize();
   } catch (err) {
-    console.error("Download all error:", err);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("Download error:", err.message);
+    if (!res.headersSent) {
+      res.status(500).json({ error: "Internal server error" });
+    }
   }
 });
 
-
-app.post("/text-upload", async (req, res) => {
-  const { textCode, userText } = req.body;
-  // console.log("Text Upload:", textCode, userText);
-
+// Text Upload (authenticated)
+app.post("/text-upload", authenticate, uploadLimiter, async (req, res) => {
   try {
-    await textModel.create({ textCode, userText });
-    // console.log("Text stored in the database.");
+    const { textCode, userText, recipient } = req.body;
+
+    if (!textCode || !userText) {
+      return res.status(400).json({ error: "textCode and userText are required" });
+    }
+
+    await textModel.create({
+      textCode,
+      sender: req.user.username,
+      recipient: recipient || null,
+      userText,
+    });
     res.send("Text uploaded to the database");
 
-    // Delay text deletion by 4 minutes (240000 ms)
     setTimeout(async () => {
-      await textModel.deleteMany({ textCode });
-      // console.log(`Deleted text with code ${textCode} from the database.`);
+      try {
+        await textModel.deleteMany({ textCode });
+      } catch (err) {
+        console.error("Text cleanup error:", err.message);
+      }
     }, 240000);
   } catch (error) {
-    // console.error("Error uploading text to the database:", error);
-    res.status(500).send("Failed to upload text");
+    console.error("Text upload error:", error.message);
+    res.status(500).json({ error: "Failed to upload text" });
   }
+});
+
+// Graceful shutdown
+process.on("SIGTERM", async () => {
+  console.log("SIGTERM received. Shutting down gracefully...");
+  await mongoose.connection.close();
+  process.exit(0);
+});
+
+process.on("SIGINT", async () => {
+  console.log("SIGINT received. Shutting down gracefully...");
+  await mongoose.connection.close();
+  process.exit(0);
 });

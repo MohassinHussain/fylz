@@ -1,9 +1,12 @@
 const mongoose = require('mongoose')
 
 const textSchema = new mongoose.Schema({
-    textCode: String,
-    userText: String
-})
+    textCode: { type: String, required: true },
+    sender: { type: String, required: true },
+    recipient: { type: String, default: null },
+    userText: { type: String, required: true },
+    expiresAt: { type: Date, default: Date.now, expires: 240 },
+}, { timestamps: true });
 
-const textModel = new mongoose.model("text", textSchema)
+const textModel = mongoose.model("text", textSchema)
 module.exports = textModel;

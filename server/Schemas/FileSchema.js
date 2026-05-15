@@ -1,21 +1,12 @@
-// const mongoose = require('mongoose')
-
-// const fileSchema = new mongoose.Schema({
-//     b64Strings:[String],
-//     test: String    
-// })
-
-// const fileModel = new mongoose.model("File", fileSchema)
-// module.exports = fileModel;
-
 const mongoose = require('mongoose')
 
 const fileSchema = new mongoose.Schema({
-  code: String,
-  fileNames: [String],
-});
+  code: { type: String, required: true },
+  sender: { type: String, required: true },
+  recipient: { type: String, default: null },
+  fileNames: [{ type: String, required: true }],
+  expiresAt: { type: Date, default: Date.now, expires: 240 },
+}, { timestamps: true });
 
-const fileModel = new mongoose.model("File", fileSchema)
+const fileModel = mongoose.model("File", fileSchema)
 module.exports = fileModel;
-
-
