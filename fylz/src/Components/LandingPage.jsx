@@ -153,7 +153,7 @@ const LandingPage = () => {
 
     setIsAuthing(true);
     try {
-      const res = await api.post("/", {
+      const res = await api.post("/user/auth", {
         username: usernameInput.trim(),
         password: passwordInput,
       });
