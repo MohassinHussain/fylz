@@ -45,6 +45,17 @@ api.interceptors.response.use(
   }
 );
 
+const copyToClipboard = (text) => {
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand("copy");
+  document.body.removeChild(textarea);
+};
+
 const hashCode = async (code) => {
   const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   let randomChars = "";
@@ -244,11 +255,8 @@ const LandingPage = () => {
         },
       });
       setSharableCode(hashedCode);
-      navigator.clipboard.writeText(hashedCode).then(() => {
-        showNotification("Files uploaded! Code copied to clipboard.");
-      }).catch(() => {
-        showNotification("Files uploaded successfully!");
-      });
+      copyToClipboard(hashedCode);
+      showNotification("Files uploaded! Code copied to clipboard.");
     } catch {
       showNotification("Upload failed. Please try again.", "error");
     } finally {
@@ -272,11 +280,8 @@ const LandingPage = () => {
         recipient: recipient.trim() ? recipient.trim().toLowerCase() : null,
       });
       setSharableCode(hashedCode);
-      navigator.clipboard.writeText(hashedCode).then(() => {
-        showNotification("Text uploaded! Code copied to clipboard.");
-      }).catch(() => {
-        showNotification("Text uploaded successfully!");
-      });
+      copyToClipboard(hashedCode);
+      showNotification("Text uploaded! Code copied to clipboard.");
     } catch {
       showNotification("Upload failed. Please try again.", "error");
     } finally {
@@ -313,9 +318,8 @@ const LandingPage = () => {
   };
 
   const handleCopyCode = (text) => {
-    navigator.clipboard.writeText(text).then(() => {
-      showNotification("Copied to clipboard!");
-    });
+    copyToClipboard(text);
+    showNotification("Copied to clipboard!");
   };
 
   const handleDownload = (fileName) => {
