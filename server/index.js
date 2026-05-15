@@ -35,7 +35,7 @@ app.use(compression());
 
 // CORS
 const CORS_ORIGINS = process.env.CORS_ORIGIN
-  ? process.env.CORS_ORIGIN.split(",")
+  ? process.env.CORS_ORIGIN.split(",").map((u) => u.replace(/\/$/, ""))
   : ["http://localhost:5173"];
 
 app.use(
