@@ -163,7 +163,9 @@ const LandingPage = () => {
       localStorage.setItem("fylz_token", res.data.token);
       showNotification(res.data.isNewUser ? `Account created! Welcome, ${res.data.username}.` : `Welcome back, ${res.data.username}!`);
     } catch (err) {
-      setAuthError(err.response?.data?.error || "Authentication failed.");
+      const data = err.response?.data;
+      const msg = data?.error || data?.message;
+      setAuthError(typeof msg === "string" ? msg : "Authentication failed.");
     } finally {
       setIsAuthing(false);
     }
@@ -363,7 +365,7 @@ const LandingPage = () => {
             notification.type === "error" ? "bg-red-500 text-white" : "bg-emerald-500 text-white"
           }`}>
             {notification.type === "error" ? <BiX size={20} /> : <BiCheck size={20} />}
-            <span className="font-medium">{notification.message}</span>
+            <span className="font-medium">{typeof notification.message === "string" ? notification.message : String(notification.message)}</span>
           </div>
         )}
 
@@ -387,7 +389,7 @@ const LandingPage = () => {
             {authError && (
               <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-2.5 mb-4 flex items-center gap-2">
                 <BiX className="text-red-400 flex-shrink-0" size={16} />
-                <span className="text-red-300 text-sm">{authError}</span>
+                <span className="text-red-300 text-sm">{typeof authError === "string" ? authError : String(authError)}</span>
               </div>
             )}
 
@@ -458,7 +460,7 @@ const LandingPage = () => {
           notification.type === "error" ? "bg-red-500 text-white" : "bg-emerald-500 text-white"
         }`}>
           {notification.type === "error" ? <BiX size={20} /> : <BiCheck size={20} />}
-          <span className="font-medium">{notification.message}</span>
+          <span className="font-medium">{typeof notification.message === "string" ? notification.message : String(notification.message)}</span>
         </div>
       )}
 
